@@ -1,5 +1,5 @@
 {
-  "name": "StyroCut",
+  "name": "styro-cut",
   "version": "1.0.0",
   "description": "A 2-dimensional shape extruder/cutter.",
   "main": "webServer.js",

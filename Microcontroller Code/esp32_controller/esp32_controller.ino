@@ -8,7 +8,14 @@
 
 #include <Arduino_JSON.h>
 
+
+// Include the HardwareSerial library to use Serial2 UART pins
 #include <HardwareSerial.h>
+HardwareSerial Myserial(2);
+
+// Define Serial2 UART pins
+#define RXD2 16
+#define TXD2 17
 
 
 // Declare credentials of target WAP to leech from
@@ -19,22 +26,17 @@ const char* WAPpassword = "05617159"; //"qwerty123";
 const char* LANssid = "StyrocutLAN";
 const char* LANpassword = "styr0cut1";
 
-// Initialise WiFi server
+// Initialise WiFi server on port 80
 WiFiServer server(80);
-
-
-// Define Serial2 UART pins
-#define RXD2 16
-#define TXD2 17
 
 
 // The setup function will run one time when the microcontroller starts
 void setup() {
   Serial.begin(115200);
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  Myserial.begin(9600, SERIAL_8N1, RXD2, TXD2);
   delay(4000);
   WiFi.begin(WAPssid, WAPpassword);
-  
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
@@ -47,10 +49,10 @@ void setup() {
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    
+
     http.begin("http://192.168.1.107:8080/MCInstructions");
     int httpCode = http.GET();
-    
+
     if (httpCode > 0) {
       String payload = http.getString();
       JSONVar payloadJSON = JSON.parse(payload);
@@ -63,17 +65,15 @@ void loop() {
 
       if (int(payloadJSON[payloadJSON.keys()[1]]) == 1) {
         Serial.println(payloadJSON[payloadJSON.keys()[3]]);
-        Serial2.println(payloadJSON[payloadJSON.keys()[3]]);
+        Myserial.println(payloadJSON[payloadJSON.keys()[3]]);
       }
     }
-
-    if (Serial2.available()) {
-      Serial.println(String(Serial2.readString()));
-      Serial.println("Serial2 available");
-    }
-    
     http.end();
   }
-  
+
+  while (Myserial.available()) {
+    Serial.println(Myserial.readString());
+    Serial.println("Serial2 available");
+  }
   delay(1000);
 }

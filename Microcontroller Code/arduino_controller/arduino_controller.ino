@@ -11,6 +11,9 @@ void setup() {
 // The loop function will continually run as long as the microcontroller is alive
 void loop() {
   while (Serial.available()) {
-    Serial.print(Serial.readString());
+    String serialData = Serial.readString();
+    if (serialData.length() >= 4) {
+      Serial.print(serialData);
+    }
   }
 }

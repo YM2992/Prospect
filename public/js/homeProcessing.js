@@ -1,35 +1,14 @@
 
-function dataURItoBlob(dataURI) {
-    // convert base64/URLEncoded data component to raw binary data held in a string
-    var byteString;
-    if (dataURI.split(',')[0].indexOf('base64') >= 0)
-        byteString = atob(dataURI.split(',')[1]);
-    else
-        byteString = unescape(dataURI.split(',')[1]);
-
-    // separate out the mime component
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-
-    // write the bytes of the string to a typed array
-    var ia = new Uint8Array(byteString.length);
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-
-    return new Blob([ia], {type:mimeString});
-}
-
 $(document).ready(function() {
     $('#submitImage').click(function(e){
         e.preventDefault();
-        let file = document.getElementById('fileInput').files[0];
         
-        /*let canvas = document.getElementById('canvas');
-        let dataURL = canvas.toDataURL('image/png', 1.0);
-        let blob = dataURItoBlob(dataURL);*/
-        var formData = new FormData();
-        formData.append('file', file);
+        document.getElementById('fileInput').disabled = true;
+        document.getElementById('submitImage').disabled = true;
 
+        let file = document.getElementById('fileInput').files[0];
+        let formData = new FormData();
+        formData.append('file', file);
 
         $.ajax({
             url: '../../upload',
@@ -39,6 +18,9 @@ $(document).ready(function() {
             contentType: false,
             success: function(data) {
                 console.log(data);
+                if (data == "success") {
+                    document.getElementById('imgProcessingProgress').style.visibility = "visible";
+                }
             }
         });
     });
@@ -65,7 +47,6 @@ function getOutput() {
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile)
 
     document.getElementById('submitImage').style.visibility = "visible";
-    document.getElementById('imgProcessingProgress').style.visibility = "visible";
 }
 
 
@@ -109,8 +90,46 @@ socket.on('disconnect', () => {
 });
 
 // When the socket connection receives an event, handle the data given (progress of the image processing and cutting)
-socket.on('event', (data) => {
+socket.on('processing image progress', (data) => {
+    setTimeout(function() {
+        alterProcessProgress(data.y);
+        document.getElementById('progressBar').style.width = `${data.x + 1}%`;
+        document.getElementById('progressBarSpan').innerHTML = `Processing image: ${data.x + 1}%`;
+    }, 100)
+});
+
+socket.on('cutting progress', (data) => {
     alterProcessProgress(data.y);
-    document.getElementById('progressBar').style.width = `${data.x + 1}%`
-    document.getElementById('progressBarSpan').innerHTML = `Processing image: ${data.x + 1}%`
+    document.getElementById('progressBar').style.width = `${data.x + 1}%`;
+    document.getElementById('progressBarSpan').innerHTML = `Cutting image: ${data.x + 1}%`;
+});
+
+
+function timeRemainingChange(completionDate) {
+    var currentDate = new Date().getTime() / 1000;
+
+    let totalSeconds = completionDate - currentDate;
+    let hours = Math.floor(totalSeconds / 3600);
+    totalSeconds = totalSeconds - hours * 3600;
+    let minutes = Math.floor(totalSeconds / 60);
+    let seconds = Math.floor(totalSeconds - minutes * 60);
+
+    let formattedHours = ("0" + hours).slice(-2);
+    let formattedMins = ("0" + minutes).slice(-2);
+    let formattedSecs = ("0" + seconds).slice(-2);
+
+    document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
+}
+socket.on('completion time', (completionDate) => {
+    setTimeout(function() {
+        document.getElementById('timeLeftSpan').style.visibility = "visible";
+    }, 1000);
+
+    timeRemainingChange(completionDate);
+    const timeRemaining = setInterval(function() {
+        currentDate = new Date().getTime() / 1000;
+        if (currentDate >= completionDate) return clearInterval(timeRemaining);
+
+        timeRemainingChange(completionDate);
+    }, 1000);
 });

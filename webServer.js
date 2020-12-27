@@ -16,7 +16,7 @@ db.serialize(() => {
 
 // Web Server //
 var express = require('express'); // Require the 'express' npm library for use in this script
-const ejs = require('ejs'); // Require teh 'ejs' npm library to allow for dynamic rendering of pages
+const ejs = require('ejs'); // Require the 'ejs' npm library to allow for dynamic rendering of pages
 var app = express(); // Start an express server
 
 app.use(express.static('public')); // Run a static express server on the 'public' folder directory
@@ -101,7 +101,7 @@ let upload = multer({ dest: 'ProcessingImages/', storage: storage});
 
 app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST request
     console.log(req.file);
-    //res.send(req.file);
+    res.send("success");
     processImage(req.file); // Call the processImage function to process the image into data suitable for the microcontroller
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ function processImage(imageFileDetails) {
     for (let x = 0; x < imageData.rows; x++) { // Loop through each row of pixels in the image
         for (let y = 0; y < imageData.cols; y++) { // Loop through every column of pixels in the image
             // The above iterations result in the looping through of every pixel present in the image
-            io.emit('event', {x: x, y: y});
+            io.emit('processing image progress', {x: x, y: y});
 
             totalPixelCount++ // Increment totalPixelCount
 
@@ -157,6 +157,10 @@ function processImage(imageFileDetails) {
     console.log(`Pixels: ${totalPixelCount}`);
     console.log(`Shaded pixels: ${shadedPixelCount}`);
     console.log(imagePoints);
+
+    var currentDate = new Date().getTime() / 1000;
+    console.log(currentDate);
+    io.emit('completion time', (currentDate + shadedPixelCount));
 
     return instructMCs(imagePoints, imageFileDetails);
 }

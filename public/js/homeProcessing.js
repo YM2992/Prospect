@@ -122,7 +122,14 @@ function timeRemainingChange(completionDate) {
 }
 socket.on('completion time', (completionDate) => {
     setTimeout(function() {
+        document.getElementById('progressBar').style.width = `0%`;
+        document.getElementById('progressBarSpan').innerHTML = `Cutting image: 0%`;
         document.getElementById('timeLeftSpan').style.visibility = "visible";
+
+        let processDivs = document.getElementsByClassName('processDiv');
+        for (var row = 0; row < processDivs.length; row++) {
+            processDivs[row].style.width = "0%";
+        }
     }, 1000);
 
     timeRemainingChange(completionDate);

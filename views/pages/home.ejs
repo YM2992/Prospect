@@ -2,17 +2,18 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="/js/homeProcessing.js"></script>
         <link rel="stylesheet" href="/css/style.css">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="/js/jquery-3.5.1.js"></script>
+        <script src="/js/socket.io/socket.io.js"></script>
+        <script src="/js/homeProcessing.js"></script>
     </head>
     <body onload="progressDivsLoaded()">
         <header>
             <img src="/assets/StyroCut-logos.jpeg" alt="StyroCut©">
         </header>
-
+        <canvas id="canvas" width="0" height="0"></canvas>
         <div id="formDiv">
-            <form id="uploadForm" action="../../upload" method="POST" enctype="multipart/form-data">
+            <form id="uploadForm">
                 <label for="fileInput">Upload a <b>100x100 pixel PNG file</b> to initiate the processing step.</label><br><br>
                 <input class="formButton" type="file" accept="image/png" name="uploadedImage" id="fileInput" size="n" onchange="getOutput()"/>
                 <input class="formButton" type="submit" id="submitImage"/>
@@ -20,8 +21,8 @@
             <div id="imgPreviewDiv">
                 <img id="previewImg">
                 <div id="imgProcessingProgress">
-                    <div class="progressBar" style="width: <%= processing_progress%>%"></div>
-                    <span>Processing image: <%= processing_progress%>%</span>
+                    <div id="progressBar" class="progressBar" style="width: <%= processing_progress%>%"></div>
+                    <span id="progressBarSpan">Processing image: <%= processing_progress%>%</span>
                 </div>
                 <div id="progressDivs">
 

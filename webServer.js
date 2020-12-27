@@ -25,8 +25,14 @@ app.set('view engine', 'ejs'); // Set the view engine to use ejs
 const server = require('http').createServer(app);
 
 const io = require('socket.io')(server);
-io.on('connection', () => {
-    console.log("socket.io connection")
+io.on('connect', () => {
+    console.log("socket.io connection established");
+});
+io.on('disconnect', () => {
+    console.log("socket.io disconnected");
+});
+io.on('event', (data) => {
+    console.log(data);
 });
 server.listen(8080, () => {console.log("Server started on localhost:8080")}); // Listen to port 8080
 
@@ -39,7 +45,7 @@ app.get('/', (req, res) => { // Detect when user attempts to call web page with 
 
 app.get('/home', (req, res) => {
     res.render('pages/home', {
-        processing_progress: 10
+        processing_progress: 0
     });
 });
 
@@ -93,7 +99,7 @@ let storage = multer.diskStorage({
 let upload = multer({ dest: 'ProcessingImages/', storage: storage});
 
 
-app.post('/upload', upload.single('uploadedImage'), (req, res) => { // Detect when user attempts to call web page with the directory of '/'
+app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST request
     console.log(req.file);
     //res.send(req.file);
     processImage(req.file); // Call the processImage function to process the image into data suitable for the microcontroller
@@ -133,6 +139,7 @@ function processImage(imageFileDetails) {
     for (let x = 0; x < imageData.rows; x++) { // Loop through each row of pixels in the image
         for (let y = 0; y < imageData.cols; y++) { // Loop through every column of pixels in the image
             // The above iterations result in the looping through of every pixel present in the image
+            io.emit('event', {x: x, y: y});
 
             totalPixelCount++ // Increment totalPixelCount
 

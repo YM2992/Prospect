@@ -123,6 +123,8 @@ const orderRecentFiles = (dir) => {
 };
 
 
+// https://www.npmjs.com/package/image-outline
+
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
 
 function processImage(imageFileDetails) {

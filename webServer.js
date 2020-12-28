@@ -136,7 +136,13 @@ function processImage(imageFileDetails) {
     const imageData = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
     console.log(imageData);
 
-    if (imageData.rows != 100 || imageData.cols != 100) return console.log("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS"); // Ensure the image is the valid size (100 by 100 pixels)
+    // Ensure the image is the valid size (100 by 100 pixels)
+    if (imageData.rows != 100 || imageData.cols != 100) {
+        io.emit('failed submission');
+        io.emit('event', {1: {'message': `Image is incorrect size (${imageData.rows}x${imageData.cols}). Should be (100x100).`, 'colour': '235, 0, 0'}});
+        console.log("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
+        return;
+    }
 
     for (let x = 0; x < imageData.rows; x++) { // Loop through each row of pixels in the image
         for (let y = 0; y < imageData.cols; y++) { // Loop through every column of pixels in the image

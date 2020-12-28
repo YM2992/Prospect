@@ -1,5 +1,9 @@
+/* Prevent page reload */
+window.onbeforeunload = function() {
+    return console.log("reloaded page");
+}
 
-
+/* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e){
@@ -41,8 +45,12 @@ function newEventLogs(messages) {
         let newEventMessageBG = document.createElement('p');
         newEventMessageBG.classList.add('eventLogMessageBG');
         let newEventMessage = document.createElement('p');
-        newEventMessage.innerHTML = messages[i];
+        newEventMessage.innerHTML = messages[i].message;
         newEventMessage.classList.add('eventLogMesssage');
+
+        if (messages[i].colour) {
+            newEventMessage.style.color = `RGB(${messages[i].colour})`
+        }
 
         newEventMessageBG.appendChild(newEventMessage);
         document.getElementById('eventLogsDiv').appendChild(newEventMessageBG);
@@ -67,7 +75,7 @@ function getOutput() {
         console.log("Declined file type")
     };
 
-    document.getElementById('previewImg').src = URL.createObjectURL(imageFile)
+    document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
 
     document.getElementById('submitImage').style.visibility = "visible";
 }
@@ -112,6 +120,19 @@ socket.on('disconnect', () => {
     console.log("socket.io disconnected");
 });
 
+
+socket.on('failed submission', () => {
+    document.getElementById('previewImg').src = "";
+    document.getElementById('submitImage').style.visibility = "hidden";
+    document.getElementById('fileInput').disabled = false;
+    document.getElementById('submitImage').disabled = false;
+    document.getElementById('imgProcessingProgress').style.visibility = "hidden";
+});
+
+socket.on('event', (data) => {
+    newEventLogs(data);
+});
+
 // When the socket connection receives an event, handle the data given (progress of the image processing and cutting)
 var progressAlreadyGiven = [];
 socket.on('processing image progress', (data) => {
@@ -121,7 +142,10 @@ socket.on('processing image progress', (data) => {
         document.getElementById('progressBarSpan').innerHTML = `Processing image: ${data.x + 1}%`;
         if (!progressAlreadyGiven.includes(data.x + 1)) {
             progressAlreadyGiven.push(data.x + 1);
-            newEventLogs([`Processing image .. ${data.x + 1}% complete`]);
+            newEventLogs({
+                1: {
+                'message': `Processing image .. ${data.x + 1}% complete`
+            }});
         }
     }, 100)
 });
@@ -154,7 +178,11 @@ socket.on('completion time', (completionDate) => {
     let formattedMins = returnedFormattedTime.formattedMins;
     let formattedSecs = returnedFormattedTime.formattedSecs;
     setTimeout(function() {
-        newEventLogs(["Processing image complete", `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`]);
+        newEventLogs({
+            1: {'message': "Image successfully processed"}, 
+            2: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`
+        }});
+
         document.getElementById('progressBar').style.width = `0%`;
         document.getElementById('progressBarSpan').innerHTML = `Cutting image: 0%`;
         document.getElementById('timeLeftSpan').style.visibility = "visible";
@@ -163,7 +191,7 @@ socket.on('completion time', (completionDate) => {
         for (var row = 0; row < 100; row++) {
             processDivs[row].style.width = "0%";
         }
-    }, 1000);
+    }, 5000);
 
     document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
     const timeRemaining = setInterval(function() {

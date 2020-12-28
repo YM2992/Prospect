@@ -19,7 +19,6 @@ header img {
 }
 
 
-
 /* Uploaded image preview */
 #imgPreviewDiv {
     position: absolute;
@@ -140,6 +139,7 @@ header img {
     margin-left: 5%;
     display: block;
 }
+
 
 /* Footer */
 footer {

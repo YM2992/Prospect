@@ -139,7 +139,7 @@ function processImage(imageFileDetails) {
     // Ensure the image is the valid size (100 by 100 pixels)
     if (imageData.rows != 100 || imageData.cols != 100) {
         io.emit('failed submission');
-        io.emit('event', {1: {'message': `Image is incorrect size (${imageData.rows}x${imageData.cols}). Should be (100x100).`, 'colour': '235, 0, 0'}});
+        io.emit('event', {1: {'message': `<i>${imageFileDetails.filename}</i> is an invalid size (${imageData.rows}x${imageData.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
         console.log("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
         return;
     }

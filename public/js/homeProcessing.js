@@ -47,6 +47,7 @@ function newEventLogs(messages) {
         let newEventMessage = document.createElement('p');
         newEventMessage.innerHTML = messages[i].message;
         newEventMessage.classList.add('eventLogMesssage');
+        newEventMessage.title = new Date().toUTCString();
 
         if (messages[i].colour) {
             newEventMessage.style.color = `RGB(${messages[i].colour})`
@@ -147,7 +148,7 @@ socket.on('processing image progress', (data) => {
                 'message': `Processing image .. ${data.x + 1}% complete`
             }});
         }
-    }, 100)
+    }, 100);
 });
 
 socket.on('cutting progress', (data) => {
@@ -158,7 +159,7 @@ socket.on('cutting progress', (data) => {
 
 
 function formattedTimeRemaining(completionDate) {
-    var currentDate = new Date().getTime() / 1000;
+    let currentDate = new Date().getTime() / 1000;
 
     let totalSeconds = completionDate - currentDate;
     let hours = Math.floor(totalSeconds / 3600);
@@ -195,7 +196,7 @@ socket.on('completion time', (completionDate) => {
 
     document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
     const timeRemaining = setInterval(function() {
-        currentDate = new Date().getTime() / 1000;
+        let currentDate = new Date().getTime() / 1000;
         if (currentDate >= completionDate) return clearInterval(timeRemaining);
 
         let returnedFormattedTime = formattedTimeRemaining(completionDate);

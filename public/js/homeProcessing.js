@@ -128,6 +128,7 @@ socket.on('failed submission', () => {
     document.getElementById('fileInput').disabled = false;
     document.getElementById('submitImage').disabled = false;
     document.getElementById('imgProcessingProgress').style.visibility = "hidden";
+    document.getElementById('fileInput').value = null;
 });
 
 socket.on('event', (data) => {
@@ -180,7 +181,7 @@ socket.on('completion time', (completionDate) => {
     let formattedSecs = returnedFormattedTime.formattedSecs;
     setTimeout(function() {
         newEventLogs({
-            1: {'message': "Image successfully processed"}, 
+            1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}, 
             2: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`
         }});
 
@@ -197,9 +198,9 @@ socket.on('completion time', (completionDate) => {
     document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
     const timeRemaining = setInterval(function() {
         let currentDate = new Date().getTime() / 1000;
-        if (currentDate >= completionDate) return clearInterval(timeRemaining);
+        if (currentDate >= completionDate + 5) return clearInterval(timeRemaining);
 
-        let returnedFormattedTime = formattedTimeRemaining(completionDate);
+        let returnedFormattedTime = formattedTimeRemaining(completionDate + 5);
         let formattedHours = returnedFormattedTime.formattedHours;
         let formattedMins = returnedFormattedTime.formattedMins;
         let formattedSecs = returnedFormattedTime.formattedSecs;

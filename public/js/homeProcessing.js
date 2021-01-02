@@ -1,43 +1,3 @@
-/* Prevent page reload */
-window.onbeforeunload = function() {
-    return console.log("reloaded page");
-}
-
-/* Handle events after the document is ready and all DOM elements are loaded */
-$(document).ready(function() {
-    // When the document is ready, remove the default redirection of the form submit
-    $('#submitImage').click(function(e){
-        e.preventDefault();
-        
-        document.getElementById('fileInput').disabled = true;
-        document.getElementById('submitImage').disabled = true;
-
-        let file = document.getElementById('fileInput').files[0];
-        let formData = new FormData();
-        formData.append('file', file);
-
-        $.ajax({
-            url: '../../upload',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(data) {
-                console.log(data);
-                if (data == "success") {
-                    document.getElementById('imgProcessingProgress').style.visibility = "visible";
-                }
-            }
-        });
-    });
-
-    // Keep the 'eventLogsDiv' scrolled to the bottom
-    $("#eventLogsDiv").bind('DOMSubtreeModified', function() {
-        var eventLogsDiv = document.getElementById('eventLogsDiv');
-        eventLogsDiv.scrollTop = eventLogsDiv.scrollHeight;
-    });
-});
-
 
 /* Event logs */
 function newEventLogs(messages) {
@@ -58,6 +18,79 @@ function newEventLogs(messages) {
     }
 }
 
+
+/* Prevent page reload */
+window.onbeforeunload = function() {
+    return console.log("reloaded page");
+}
+
+// Start a socket.io connection with the server
+const socket = io('http://localhost:8080');
+
+/* Handle events after the document is ready and all DOM elements are loaded */
+$(document).ready(function() {
+    // When the document is ready, remove the default redirection of the form submit
+    $('#submitImage').click(function(e) {
+        e.preventDefault();
+
+        let file = document.getElementById('fileInput').files[0];
+        if (!file) {
+            newEventLogs({1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
+            document.getElementById('submitImage').style.visibility = "hidden";
+            return;
+        }
+
+        document.getElementById('fileInput').disabled = true;
+        document.getElementById('submitImage').disabled = true;
+
+        let formData = new FormData();
+        formData.append('file', file);
+
+        $.ajax({
+            url: '../../upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                console.log(data);
+                if (data == "success") {
+                    document.getElementById('imgProcessingProgress').style.visibility = "visible";
+                }
+            }
+        });
+    });
+
+    // Begin cutting process
+    $('#beginCutting').click(function() {
+        $.ajax({
+            url: '../../webMsg',
+            type: 'POST',
+            data: 'begin cutting',
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                console.log(data);
+            }
+        });
+
+        let processDivs = document.getElementsByClassName('processDiv');
+        for (var row = 0; row < 100; row++) {
+            processDivs[row].style.width = "0%";
+        }
+        document.getElementById('progressBar').style.width = "0%";
+        document.getElementById('progressBarSpan').innerHTML = "Cutting image: 0%";
+        document.getElementById('imgProcessingProgress').style.visibility = "hidden";
+    });
+
+    // Keep the 'eventLogsDiv' scrolled to the bottom
+    $("#eventLogsDiv").bind('DOMSubtreeModified', function() {
+        var eventLogsDiv = document.getElementById('eventLogsDiv');
+        eventLogsDiv.scrollTop = eventLogsDiv.scrollHeight;
+    });
+});
+
+
 /* Image obtaining and relaying */
 let acceptedFileTypes = ['image/png']
 
@@ -69,7 +102,11 @@ function getFile(filePath) {
 function getOutput() {
     let imageFile = document.getElementById('fileInput').files[0]
 
-    if (!imageFile) return console.warn("No image received.");
+    if (!imageFile) {
+        console.warn("No image received.");
+        document.getElementById('submitImage').style.visibility = "hidden";
+        return;
+    }
     if (acceptedFileTypes.includes(imageFile.type)) {
         console.log("Accepted file type")
     } else {
@@ -112,8 +149,6 @@ function incremenetProcessProgress() {
 
 
 /* socket.io live updates server-client */
-// Start a socket.io connection with the server
-const socket = io('http://localhost:8080');
 socket.on('connect', () => {
     console.log("socket.io connection established");
 });
@@ -135,6 +170,10 @@ socket.on('event', (data) => {
     newEventLogs(data);
 });
 
+socket.on('begin cutting', () => {
+    document.getElementById('beginCutting').style.visibility = "visible";
+});
+
 // When the socket connection receives an event, handle the data given (progress of the image processing and cutting)
 var progressAlreadyGiven = [];
 socket.on('processing image progress', (data) => {
@@ -145,9 +184,8 @@ socket.on('processing image progress', (data) => {
         if (!progressAlreadyGiven.includes(data.x + 1)) {
             progressAlreadyGiven.push(data.x + 1);
             newEventLogs({
-                1: {
-                'message': `Processing image .. ${data.x + 1}% complete`
-            }});
+                1: {'message': `Processing image .. ${data.x + 1}% complete`}
+            });
         }
     }, 100);
 });
@@ -181,18 +219,11 @@ socket.on('completion time', (completionDate) => {
     let formattedSecs = returnedFormattedTime.formattedSecs;
     setTimeout(function() {
         newEventLogs({
-            1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}, 
-            2: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`
-        }});
+            1: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
+        });
 
-        document.getElementById('progressBar').style.width = `0%`;
-        document.getElementById('progressBarSpan').innerHTML = `Cutting image: 0%`;
+        document.getElementById('imgProcessingProgress').style.visibility = "visible";
         document.getElementById('timeLeftSpan').style.visibility = "visible";
-
-        let processDivs = document.getElementsByClassName('processDiv');
-        for (var row = 0; row < 100; row++) {
-            processDivs[row].style.width = "0%";
-        }
     }, 5000);
 
     document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;

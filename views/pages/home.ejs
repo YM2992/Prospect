@@ -20,13 +20,16 @@
             <div id="imgPreviewDiv">
                 <img id="previewImg">
                 <div id="imgProcessingProgress">
-                    <div id="progressBar" class="progressBar" style="width: <%= processing_progress%>%"></div>
-                    <span id="progressBarSpan">Processing image: <%= processing_progress%>%</span>
+                    <div id="progressBar" class="progressBar"></div>
+                    <span id="progressBarSpan">Processing image: 0%</span>
                     <span id="timeLeftSpan">Time left until completion (hh:mm:ss): 00:00:00</span>
                 </div>
                 <div id="progressDivs">
 
                 </div>
+            </div>
+            <div id="actionButtonsDiv">
+                <input type="image" src="/assets/Play_Button.png" alt="Begin cutting" title="Begin cutting" id="beginCutting"/>
             </div>
             <div id="eventLogsDivTitleBar">
                 <p>Events</p>

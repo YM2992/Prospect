@@ -1,4 +1,8 @@
 
+// Global variables //
+var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
+
+
 // Database initialisation //
 const fs = require('fs');
 const dbFile = './database.db';
@@ -23,17 +27,20 @@ app.use(express.static('public')); // Run a static express server on the 'public
 app.set('view engine', 'ejs'); // Set the view engine to use ejs
 
 const server = require('http').createServer(app);
-
 const io = require('socket.io')(server);
-io.on('connect', () => {
+
+io.on('connection', (socket) => {
     console.log("socket.io connection established");
+
+    /*socket.on('event', (data) => {
+        console.log(data);
+    });*/ // EXAMPLE
 });
 io.on('disconnect', () => {
     console.log("socket.io disconnected");
 });
-io.on('event', (data) => {
-    console.log(data);
-});
+
+
 server.listen(8080, () => {console.log("Server started on localhost:8080")}); // Listen to port 8080
 
 
@@ -44,9 +51,7 @@ app.get('/', (req, res) => { // Detect when user attempts to call web page with 
 });
 
 app.get('/home', (req, res) => {
-    res.render('pages/home', {
-        processing_progress: 0
-    });
+    res.render('pages/home');
 });
 
 // Get the current instructions from the database -- Microcontroller reads from this
@@ -76,6 +81,18 @@ app.get('/MCInstructionsList', (req, res) => {
         res.send(formattedResponse);
     }
     waitForResponse();
+});
+
+
+app.post('/webMsg', (req, res) => { // Handle the POST request
+    console.log(req);
+    switch (req) {
+        case 'begin cutting':
+            res.send("success - webMsg");
+            const currentDate = new Date().getTime() / 1000;
+            io.emit('completion time', (currentDate + shadedPixelCount));
+            break;
+    }
 });
 
 // Generate a randomised string of 15 characters for the uploaded image filename
@@ -128,10 +145,15 @@ const orderRecentFiles = (dir) => {
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
 
 function processImage(imageFileDetails) {
+    if (!imageFileDetails) {
+        io.emit('event', {1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
+        return;
+    }
+
     let imagePoints = []; // Declare the imagePoints array only within this scope with the ability to be changed
 
     let totalPixelCount = 0; // Declare the totalPixelCount integer only within this scope with the ability to be changed
-    let shadedPixelCount = 0; // Declare the shadedPixelCount integer only within this scope with the ability to be changed
+    shadedPixelCount = 0; // Reset shadedPixelCount back to 0 to prevent miscalculations/errors
 
     const imageData = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
     console.log(imageData);
@@ -139,7 +161,7 @@ function processImage(imageFileDetails) {
     // Ensure the image is the valid size (100 by 100 pixels)
     if (imageData.rows != 100 || imageData.cols != 100) {
         io.emit('failed submission');
-        io.emit('event', {1: {'message': `<i>${imageFileDetails.filename}</i> is an invalid size (${imageData.rows}x${imageData.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
+        io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${imageData.rows}x${imageData.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
         console.log("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
         return;
     }
@@ -166,9 +188,9 @@ function processImage(imageFileDetails) {
     console.log(`Shaded pixels: ${shadedPixelCount}`);
     console.log(imagePoints);
 
-    var currentDate = new Date().getTime() / 1000;
-    console.log(currentDate);
-    io.emit('completion time', (currentDate + shadedPixelCount));
+    setTimeout(function(){
+        io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
+    }, 3000);
 
     return instructMCs(imagePoints, imageFileDetails);
 }

@@ -30,6 +30,10 @@ const char* LANpassword = "styr0cut1";
 WiFiServer server(80);
 
 
+// Runtime variables
+int chunkId = 0;
+
+
 // The setup function will run one time when the microcontroller starts
 void setup() {
   Serial.begin(115200);
@@ -48,27 +52,44 @@ void setup() {
 // The loop function will continually run as long as the microcontroller is alive
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
+    HTTPClient httpActions;
+    httpActions.begin("http://192.168.1.107:8080/MCActions");
+    int httpACode = httpActions.GET();
+    if (httpACode > 0) {
+      String httpAPload = httpActions.getString();
+      JSONVar httpAPloadJSON = JSON.parse(httpAPload);
 
-    http.begin("http://192.168.1.107:8080/MCInstructions");
-    int httpCode = http.GET();
+      Serial.println(httpAPloadJSON);
 
-    if (httpCode > 0) {
-      String payload = http.getString();
-      JSONVar payloadJSON = JSON.parse(payload);
-
-      //Serial.println(payloadJSON);
-
-      if (JSON.typeof(payloadJSON) == "undefined") {
+      if (JSON.typeof(httpAPloadJSON) == "undefined") {
         return;
       }
 
-      if (int(payloadJSON[payloadJSON.keys()[1]]) == 1) {
-        Serial.println(payloadJSON[payloadJSON.keys()[3]]);
-        Myserial.println(payloadJSON[payloadJSON.keys()[3]]);
+      if (chunkId > 10) {
+        HTTPClient httpIns;
+
+        httpIns.begin("http://192.168.1.107:8080/MCInstructions?id=" + String(chunkId));
+        int httpInsCode = httpIns.GET();
+
+        if (httpInsCode > 0) {
+          String httpInsPload = httpIns.getString();
+          JSONVar httpInsPloadJSON = JSON.parse(httpInsPload);
+
+          //Serial.println(payloadJSON);
+
+          if (JSON.typeof(httpInsPloadJSON) == "undefined") {
+            return;
+          }
+
+          if (int(httpInsPloadJSON[httpInsPloadJSON.keys()[1]]) == 1) {
+            Serial.println(httpInsPloadJSON[httpInsPloadJSON.keys()[3]]);
+            Myserial.println(httpInsPloadJSON[httpInsPloadJSON.keys()[3]]);
+          }
+        }
+        httpIns.end();
       }
     }
-    http.end();
+    httpActions.end();
   }
 
   while (Myserial.available()) {

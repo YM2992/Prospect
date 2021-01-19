@@ -13,7 +13,7 @@
         </header>
         <div id="formDiv">
             <form id="uploadForm">
-                <label for="fileInput">Upload a <b>100x100 pixel PNG file</b> to initiate the processing step.</label><br><br>
+                <label for="fileInput">Upload a <b>100x100 pixel PNG image</b> to initiate the processing step.</label><br><br>
                 <input class="formButton" type="file" accept="image/png" name="uploadedImage" id="fileInput" size="n" onchange="getOutput()"/>
                 <input class="formButton" type="submit" id="submitImage"/>
             </form>
@@ -29,6 +29,9 @@
                 </div>
             </div>
             <div id="actionButtonsDiv">
+                <div class="slideContainer">
+                    <input type="range" min="1" class="slider" id="objectNumber">
+                </div>
                 <input type="image" src="/assets/Play_Button.png" alt="Begin cutting" title="Begin cutting" id="beginCutting"/>
             </div>
             <div id="eventLogsDivTitleBar">

@@ -11,8 +11,12 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database(dbFile);
 
 db.serialize(() => {
-    //db.exec("DROP TABLE StyrocutData");
-    db.exec("CREATE TABLE IF NOT EXISTS StyrocutData (id INTEGER PRIMARY KEY AUTOINCREMENT, cutting BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT)");
+    /*db.exec("DROP TABLE StyrocutData");
+    db.exec("DROP TABLE Instructions");*/
+    
+    db.exec("CREATE TABLE IF NOT EXISTS StyrocutData (id INTEGER PRIMARY KEY AUTOINCREMENT, cutting BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT)");
+    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT)")
+    //db.run(`INSERT INTO Instructions (id, action, message) VALUES (NULL, '', '')`);
 
     console.log("Database initialised.");
 });
@@ -54,13 +58,54 @@ app.get('/home', (req, res) => {
     res.render('pages/home');
 });
 
-// Get the current instructions from the database -- Microcontroller reads from this
-app.get('/MCInstructions', (req, res) => {
+
+app.get('/MCActions', (req, res) => {
     db.serialize(() => {
-        db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => { // Retrieves the records from the StyrocutData table in descending order of value id
-            res.send(JSON.stringify(rows[0])); // Gets the latest record from the StyrocutData table
+        db.all("SELECT * FROM Instructions", (err, rows) => { // Retrieves the records from the Instructions table
+            res.send(JSON.stringify(rows[0]));
         });
     });
+});
+
+function updateMCActions(action, message) {
+    let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'cutting' | 'warning' | 'error' |
+    let messageVar = message || "";
+
+    db.serialize(() => {
+        db.each(`SELECT * FROM Instructions WHERE cutting='1'`, (error, row) => {
+            db.run(`UPDATE Instructions SET action='${actionVar}', message='${messageVar}' WHERE id='1'`)
+        });
+    });
+}
+//updateMCActions();
+
+// Get the current instructions from the database -- Microcontroller reads from this
+app.get('/MCInstructions', (req, res) => {
+    const dataPacketId = req.query.id;
+    if (!dataPacketId) {
+        db.serialize(() => {
+            db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => { // Retrieves the records from the StyrocutData table in descending order of value id
+                res.send(JSON.stringify(rows[0])); // Gets the latest record from the StyrocutData table
+            });
+        });
+    } else {
+        db.serialize(() => {
+            db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => {
+                let response = "";
+                const formattedPoints = JSON.parse(rows[0].formattedPoints);
+                const fPointsLength = formattedPoints.length;
+                
+                if (dataPacketId >= fPointsLength) {
+                    return res.send("error");
+                }
+
+                response = formattedPoints[dataPacketId];
+                
+                //console.log(response);
+                res.send(response);
+            });
+        })
+    }
 });
 
 // View a list of ALL instructions saved to the database for the microcontroller to read -- Debug purposes
@@ -144,6 +189,29 @@ const orderRecentFiles = (dir) => {
 
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
 
+function getImageContours(image) {
+    const grayImage = image.bgrToGray();
+    const threshold = grayImage.threshold(200, 255, cv.THRESH_BINARY);
+
+    let contours = threshold.findContours(cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE); // cv.CHAIN_APPROX_NONE for every single point, cv.CHAIN_APPROX_SIMPLE for end points
+    let sortedContours = contours.sort((c0, c1) => c1.area - c0.area);
+    let individualContour;
+    let individualContours = [];
+
+    for (let v = 0; v < contours.length; v++) {
+        individualContour = sortedContours[v];
+        individualContour = individualContour.getPoints();
+        console.log(individualContour);
+        individualContours.push(individualContour);
+    }
+        
+    /*threshold.drawContours([contours], -1, new cv.Vec3(41, 176, 218), { thickness: 3});
+    cv.imshowWait("Image", threshold);*/
+
+    //console.log(individualContours);
+    return individualContours;
+}
+
 function processImage(imageFileDetails) {
     if (!imageFileDetails) {
         io.emit('event', {1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
@@ -155,56 +223,89 @@ function processImage(imageFileDetails) {
     let totalPixelCount = 0; // Declare the totalPixelCount integer only within this scope with the ability to be changed
     shadedPixelCount = 0; // Reset shadedPixelCount back to 0 to prevent miscalculations/errors
 
-    const imageData = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
-    console.log(imageData);
+    const image = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
+    console.log(image);
 
     // Ensure the image is the valid size (100 by 100 pixels)
-    if (imageData.rows != 100 || imageData.cols != 100) {
+    if (image.rows != 100 || image.cols != 100) {
         io.emit('failed submission');
-        io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${imageData.rows}x${imageData.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
+        io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${image.rows}x${image.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
         console.log("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
         return;
     }
 
-    for (let x = 0; x < imageData.rows; x++) { // Loop through each row of pixels in the image
-        for (let y = 0; y < imageData.cols; y++) { // Loop through every column of pixels in the image
+    updateMCActions("processing");
+
+    for (let x = 0; x < image.rows; x++) { // Loop through each row of pixels in the image
+        for (let y = 0; y < image.cols; y++) { // Loop through every column of pixels in the image
             // The above iterations result in the looping through of every pixel present in the image
             io.emit('processing image progress', {x: x, y: y});
 
             totalPixelCount++ // Increment totalPixelCount
-
-            const [b, g, r] = imageData.atRaw(x, y) // Get the Red/Green/Blue values on the image at pixel (x, y)
-            //console.log(`RGB: ${r}, ${g}, ${b}`)
+            
+            /*
+            const [b, g, r] = image.atRaw(x, y) // Get the Red/Green/Blue values on the image at pixel (x, y)
+            console.log(`RGB: ${r}, ${g}, ${b}`)
 
             if (r == '0' && g == '0' && b == '0') { // Check if the pixel is shaded, where the microcontrollers will direct the stepper motors to move the nichrome wire to
                 imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
                 shadedPixelCount++ // Increment shadedPixelCount
             }
+            */
         }
     }
 
     // Debugging code to print the totalPixelCount, shadedPixelCount and imagePoints to the console
     console.log(`Pixels: ${totalPixelCount}`);
-    console.log(`Shaded pixels: ${shadedPixelCount}`);
-    console.log(imagePoints);
+    //console.log(`Shaded pixels: ${shadedPixelCount}`);
+    //console.log(imagePoints);
+
+    let imageContours = getImageContours(image);
+    for (i in imageContours) {
+        for (v in imageContours[i]) {
+            console.log(imageContours[i][v]);
+            const fixedXY = [imageContours[i][v].x, imageContours[i][v].y];
+            imagePoints.push(fixedXY);
+        }
+    }
 
     setTimeout(function(){
         io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
+        updateMCActions("processed", "begin taking data");
     }, 3000);
 
-    return instructMCs(imagePoints, imageFileDetails);
+
+    return addToDatabase(imagePoints, imageFileDetails);
+}
+
+function arrayToChunks(array, chunkSize) {
+    let index = 0;
+    let chunkedArray = [];
+
+    for (index = 0; index < array.length; index += chunkSize) {
+        let chunk = array.slice(index, index + chunkSize);
+        chunkedArray.push(chunk);
+    }
+
+    return chunkedArray;
 }
 
 // Add imageFile details and microcontroller instructions to the database to be served on '/MCInstructions' for the ESP32 to read
-function instructMCs(imagePoints, imageFileDetails) {
+function addToDatabase(imagePoints, imageFileDetails) {
     if (!imagePoints) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imagePoints' RECEIVED");
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
+    
+    formattedPoints = imagePoints;
+    formattedPoints = arrayToChunks(formattedPoints, 10);
+
     imagePoints = JSON.stringify(imagePoints);
+    formattedPoints = JSON.stringify(formattedPoints);
+
     db.serialize(() => {
         db.each(`SELECT * FROM StyrocutData WHERE cutting='1'`, (error, row) => {
             db.run(`UPDATE StyrocutData SET cutting=0 WHERE id='${row.id}'`)
         });
-        db.run(`INSERT INTO StyrocutData (id, cutting, fileName, fileSize, progress, points) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}')`)
+        db.run(`INSERT INTO StyrocutData (id, cutting, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}')`)
     });
     
 }

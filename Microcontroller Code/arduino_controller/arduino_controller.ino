@@ -36,7 +36,9 @@ void loop() {
       int x = doc[point][0];
       int y = doc[point][1];
       motorX.step(x);
+      motorXPos += x;
       motorY.step(y);
+      motorYPos += y;
     }
 
     Serial.println("next");

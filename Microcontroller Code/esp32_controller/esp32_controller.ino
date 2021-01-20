@@ -31,6 +31,7 @@ WiFiServer server(80);
 
 
 // Runtime variables
+bool chunkSend = true;
 int chunkId = 0;
 
 
@@ -51,50 +52,58 @@ void setup() {
 
 // The loop function will continually run as long as the microcontroller is alive
 void loop() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient httpActions;
-    httpActions.begin("http://192.168.1.107:8080/MCActions");
-    int httpACode = httpActions.GET();
-    if (httpACode > 0) {
-      String httpAPload = httpActions.getString();
-      JSONVar httpAPloadJSON = JSON.parse(httpAPload);
+  if (chunkSend) {
+    if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient httpActions;
+      httpActions.begin("http://192.168.1.107:8080/MCActions");
+      int httpACode = httpActions.GET();
+      if (httpACode > 0) {
+        String httpAPload = httpActions.getString();
+        JSONVar httpAPloadJSON = JSON.parse(httpAPload);
 
-      Serial.println(httpAPloadJSON);
+        //Serial.println(httpAPloadJSON);
+        const char* actionRes = (const char*) httpAPloadJSON["action"];
+        //Serial.println(actionRes);
 
-      if (JSON.typeof(httpAPloadJSON) == "undefined") {
-        return;
-      }
 
-      if (chunkId > 10) {
-        HTTPClient httpIns;
-
-        httpIns.begin("http://192.168.1.107:8080/MCInstructions?id=" + String(chunkId));
-        int httpInsCode = httpIns.GET();
-
-        if (httpInsCode > 0) {
-          String httpInsPload = httpIns.getString();
-          JSONVar httpInsPloadJSON = JSON.parse(httpInsPload);
-
-          //Serial.println(payloadJSON);
-
-          if (JSON.typeof(httpInsPloadJSON) == "undefined") {
-            return;
-          }
-
-          if (int(httpInsPloadJSON[httpInsPloadJSON.keys()[1]]) == 1) {
-            Serial.println(httpInsPloadJSON[httpInsPloadJSON.keys()[3]]);
-            Myserial.println(httpInsPloadJSON[httpInsPloadJSON.keys()[3]]);
-          }
+        if (JSON.typeof(httpAPloadJSON) == "undefined") {
+          return;
         }
-        httpIns.end();
+
+        if (String(actionRes) == "processed") {
+          //Serial.println("get chunk");
+          HTTPClient httpIns;
+
+          httpIns.begin("http://192.168.1.107:8080/MCInstructions?id=" + String(chunkId));
+          int httpInsCode = httpIns.GET();
+
+          if (httpInsCode > 0) {
+            String httpInsPload = httpIns.getString();
+            JSONVar httpInsPloadJSON = JSON.parse(httpInsPload);
+
+            if (JSON.typeof(httpInsPloadJSON) == "undefined") {
+              return;
+            }
+
+            Serial.println(httpInsPloadJSON);
+            Myserial.println(httpInsPloadJSON);
+          }
+          httpIns.end();
+        }
       }
+      httpActions.end();
     }
-    httpActions.end();
   }
 
   while (Myserial.available()) {
-    Serial.println(Myserial.readString());
-    Serial.println("Serial2 available");
+    const String serialS = Myserial.readString();
+
+    if (serialS == "received") {
+        chunkSend = false;
+    } else if (serialS == "next") {
+        chunkId++;
+        chunkSend = true;
+    }
   }
   delay(1000);
 }

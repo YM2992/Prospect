@@ -129,13 +129,18 @@ app.get('/MCInstructionsList', (req, res) => {
 });
 
 
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
 app.post('/webMsg', (req, res) => { // Handle the POST request
-    console.log(req);
-    switch (req) {
+    console.log(req.body.message);
+    switch (req.body.message) {
         case 'begin cutting':
             res.send("success - webMsg");
             const currentDate = new Date().getTime() / 1000;
             io.emit('completion time', (currentDate + shadedPixelCount));
+            updateMCActions('begin cutting');
             break;
     }
 });
@@ -234,7 +239,7 @@ function processImage(imageFileDetails) {
         return;
     }
 
-    updateMCActions("processing");
+    updateMCActions('processing');
 
     for (let x = 0; x < image.rows; x++) { // Loop through each row of pixels in the image
         for (let y = 0; y < image.cols; y++) { // Loop through every column of pixels in the image
@@ -243,15 +248,15 @@ function processImage(imageFileDetails) {
 
             totalPixelCount++ // Increment totalPixelCount
             
-            /*
+            
             const [b, g, r] = image.atRaw(x, y) // Get the Red/Green/Blue values on the image at pixel (x, y)
-            console.log(`RGB: ${r}, ${g}, ${b}`)
+            //console.log(`RGB: ${r}, ${g}, ${b}`)
 
-            if (r == '0' && g == '0' && b == '0') { // Check if the pixel is shaded, where the microcontrollers will direct the stepper motors to move the nichrome wire to
+            if (r <= 50 && g <= 50 && b <= 50) { // Check if the pixel is shaded, where the microcontrollers will direct the stepper motors to move the nichrome wire to
                 imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
                 shadedPixelCount++ // Increment shadedPixelCount
             }
-            */
+            
         }
     }
 
@@ -271,7 +276,8 @@ function processImage(imageFileDetails) {
 
     setTimeout(function(){
         io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
-        updateMCActions("processed", "begin taking data");
+        io.emit('processed');
+        updateMCActions('processed', "begin taking data");
     }, 3000);
 
 

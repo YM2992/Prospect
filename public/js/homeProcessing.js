@@ -66,9 +66,7 @@ $(document).ready(function() {
         $.ajax({
             url: '../../webMsg',
             type: 'POST',
-            data: 'begin cutting',
-            processData: false,
-            contentType: false,
+            data: {'message': 'begin cutting'},
             success: function(data) {
                 console.log(data);
             }
@@ -170,7 +168,7 @@ socket.on('event', (data) => {
     newEventLogs(data);
 });
 
-socket.on('begin cutting', () => {
+socket.on('processed', () => {
     document.getElementById('beginCutting').style.visibility = "visible";
 });
 
@@ -217,21 +215,19 @@ socket.on('completion time', (completionDate) => {
     let formattedHours = returnedFormattedTime.formattedHours;
     let formattedMins = returnedFormattedTime.formattedMins;
     let formattedSecs = returnedFormattedTime.formattedSecs;
-    setTimeout(function() {
-        newEventLogs({
-            1: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
-        });
+    newEventLogs({
+        1: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
+    });
 
-        document.getElementById('imgProcessingProgress').style.visibility = "visible";
-        document.getElementById('timeLeftSpan').style.visibility = "visible";
-    }, 5000);
+    document.getElementById('imgProcessingProgress').style.visibility = "visible";
+    document.getElementById('timeLeftSpan').style.visibility = "visible";
 
     document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
     const timeRemaining = setInterval(function() {
         let currentDate = new Date().getTime() / 1000;
-        if (currentDate >= completionDate + 5) return clearInterval(timeRemaining);
+        if (currentDate >= completionDate) return clearInterval(timeRemaining);
 
-        let returnedFormattedTime = formattedTimeRemaining(completionDate + 5);
+        let returnedFormattedTime = formattedTimeRemaining(completionDate);
         let formattedHours = returnedFormattedTime.formattedHours;
         let formattedMins = returnedFormattedTime.formattedMins;
         let formattedSecs = returnedFormattedTime.formattedSecs;

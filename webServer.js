@@ -3,6 +3,24 @@
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
 
 
+// Get host IP
+const { networkInterfaces } = require('os');
+const nets = networkInterfaces();
+const results = {};
+for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+        // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+        if (net.family === 'IPv4' && !net.internal) {
+            if (!results[name]) {
+                results[name] = [];
+            }
+            results[name].push(net.address);
+        }
+    }
+}
+const HostIP = results[Object.keys(results)[0]][0] || "localhost";
+
+
 // Database initialisation //
 const fs = require('fs');
 const dbFile = './database.db';
@@ -31,7 +49,14 @@ app.use(express.static('public')); // Run a static express server on the 'public
 app.set('view engine', 'ejs'); // Set the view engine to use ejs
 
 const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+const io = require('socket.io')(server, {
+    cors: {
+        origin: `${HostIP}`,
+        methods: ["GET", "POST"],
+        allowedHeaders: ["header-auth"],
+        credentials: true
+    }
+});
 
 io.on('connection', (socket) => {
     console.log("socket.io connection established");
@@ -44,17 +69,16 @@ io.on('disconnect', () => {
     console.log("socket.io disconnected");
 });
 
-
-server.listen(8080, () => {console.log("Server started on localhost:8080")}); // Listen to port 8080
+server.listen(8080, () => {console.log(`Server started on ${HostIP}:8080`)}); // Listen to port 8080
 
 
 const multer = require('multer'); // Require the 'multer' npm library for use in this script
 
 app.get('/', (req, res) => { // Detect when user attempts to call web page with the directory of '/'
-    res.redirect('http://localhost:8080/home') // Redirect to the home page on the user's screen
+    res.redirect(`http://${HostIP}:8080/home`) // Redirect to the home page on the user's screen
 });
 
-app.get('/home', (req, res) => {
+app.get(`/home`, (req, res) => {
     res.render('pages/home');
 });
 
@@ -197,21 +221,38 @@ const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer
 function getImageContours(image) {
     const grayImage = image.bgrToGray();
     const threshold = grayImage.threshold(200, 255, cv.THRESH_BINARY);
+    //const threshold2 = threshold;
 
     let contours = threshold.findContours(cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE); // cv.CHAIN_APPROX_NONE for every single point, cv.CHAIN_APPROX_SIMPLE for end points
     let sortedContours = contours.sort((c0, c1) => c1.area - c0.area);
     let individualContour;
     let individualContours = [];
 
-    for (let v = 0; v < contours.length; v++) {
+    for (let v = 1; v < contours.length; v++) {
         individualContour = sortedContours[v];
         individualContour = individualContour.getPoints();
-        console.log(individualContour);
+        //console.log(individualContour);
         individualContours.push(individualContour);
     }
-        
-    /*threshold.drawContours([contours], -1, new cv.Vec3(41, 176, 218), { thickness: 3});
-    cv.imshowWait("Image", threshold);*/
+
+
+    let fullContours = threshold.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
+    let sortedFullContours = fullContours.sort((c0, c1) => c1.area - c0.area);
+    let individualFullContour;
+
+    for (let v = 1; v < fullContours.length; v++) {
+        individualFullContour = sortedFullContours[v];
+        individualFullContour = individualFullContour.getPoints();
+        //console.log(individualFullContour);
+        io.emit('processing', {'points': individualFullContour});
+    }
+    
+    /*let newContours = threshold2.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
+    let newSortedContours = newContours.sort((c0, c1) => c1.area - c0.area)[1];
+    console.log(newContours);
+    let contourPoints = newSortedContours.getPoints();
+    threshold2.drawContours([contourPoints], -1, new cv.Vec3(41, 176, 218), { thickness: 1});
+    cv.imshowWait("Image", threshold2);*/
 
     //console.log(individualContours);
     return individualContours;
@@ -266,17 +307,19 @@ function processImage(imageFileDetails) {
     //console.log(imagePoints);
 
     let imageContours = getImageContours(image);
+    let contoursAmount = 0;
     for (i in imageContours) {
         for (v in imageContours[i]) {
             console.log(imageContours[i][v]);
             const fixedXY = [imageContours[i][v].x, imageContours[i][v].y];
             imagePoints.push(fixedXY);
         }
+        contoursAmount++;
     }
 
     setTimeout(function(){
         io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
-        io.emit('processed');
+        io.emit('processed', {'objectNumber': contoursAmount});
         updateMCActions('processed', "begin taking data");
     }, 3000);
 

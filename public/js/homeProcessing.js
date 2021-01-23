@@ -1,4 +1,7 @@
 
+/* Global Variables */
+const HostIP = '192.168.1.107';
+
 /* Event logs */
 function newEventLogs(messages) {
     for (let i in messages) {
@@ -25,7 +28,12 @@ window.onbeforeunload = function() {
 }
 
 // Start a socket.io connection with the server
-const socket = io('http://localhost:8080');
+const socket = io(`http://${HostIP}:8080`, {
+    withCredentials: true,
+    extraHeaders: {
+        'header-auth': "abcd"
+    }
+});
 
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
@@ -42,7 +50,7 @@ $(document).ready(function() {
 
         document.getElementById('fileInput').disabled = true;
         document.getElementById('submitImage').disabled = true;
-
+        
         let formData = new FormData();
         formData.append('file', file);
 
@@ -82,10 +90,16 @@ $(document).ready(function() {
     });
 
     // Keep the 'eventLogsDiv' scrolled to the bottom
-    $("#eventLogsDiv").bind('DOMSubtreeModified', function() {
+    $('#eventLogsDiv').bind('DOMSubtreeModified', function() {
         var eventLogsDiv = document.getElementById('eventLogsDiv');
         eventLogsDiv.scrollTop = eventLogsDiv.scrollHeight;
     });
+
+    const objectNumberSldr = document.getElementById('objectNumber');
+    const objectNumberTxt = document.getElementById('objectNumberTxt');
+    objectNumberSldr.oninput = function() {
+        objectNumberTxt.value = this.value;
+    }
 });
 
 
@@ -125,6 +139,15 @@ function progressDivsLoaded() {
         processDiv.style.top = `${i}%`
         progressDivs.appendChild(processDiv);
     }
+}
+
+function addContourOnImage(x, y) {
+    const contoursElement = document.getElementById('contoursDiv');
+    let newContourPixel = document.createElement('div');
+    newContourPixel.classList.add('contourPxl');
+    contoursElement.appendChild(newContourPixel);
+    newContourPixel.style.left = `${x * 5}px`;
+    newContourPixel.style.top = `${y * 5}px`;
 }
 
 var processingProgress = 0;
@@ -168,8 +191,18 @@ socket.on('event', (data) => {
     newEventLogs(data);
 });
 
-socket.on('processed', () => {
+socket.on('processing', (data) => {
+    for (i in data.points) {
+        addContourOnImage(data.points[i].x, data.points[i].y);
+    }
+})
+socket.on('processed', (data) => {
     document.getElementById('beginCutting').style.visibility = "visible";
+    document.getElementById('objectNumber').style.visibility = "visible";
+    document.getElementById('objectNumber').setAttribute('max', data.objectNumber);
+    document.getElementById('objectNumber').setAttribute('value', data.objectNumber);
+    document.getElementById('objectNumberTxt').style.visibility = "visible";
+    document.getElementById('objectNumberTxt').setAttribute('value', data.objectNumber);
 });
 
 // When the socket connection receives an event, handle the data given (progress of the image processing and cutting)

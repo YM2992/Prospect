@@ -18,8 +18,12 @@ int motorYPos;
 // The setup function will run one time when the microcontroller starts
 void setup() {
   Serial.begin(9600);
+
   motorX.setSpeed(100);
   motorY.setSpeed(100);
+
+  pinMode(8, OUTPUT); // Declare heated wire relay control pin
+  digitalWrite(8, LOW);
 }
 
 // The loop function will continually run as long as the microcontroller is alive
@@ -30,15 +34,22 @@ void loop() {
     StaticJsonDocument<(1024)> doc; // 1024 bytes | memory uses 6 bytes per character. e.g. 100chars = 600bytes
     deserializeJson(doc, serialChar);
 
-    Serial.println("received");
+    Serial.println("received"); // Tell the ESP32 that data has successfully been received
 
-    for (unsigned int point = 0; point < doc.size(); point++) {
+    for (unsigned int point = 0; point < doc.size(); point++) { // Loop through the points in the provided data array
       int x = doc[point][0];
       int y = doc[point][1];
+
+      x -= motorXPos;
+      y -= motorYPos;
+
       motorX.step(x);
       motorY.step(y);
+
+      motorXPos += x;
+      motorYPos += y;
     }
 
-    Serial.println("next");
+    Serial.println("next"); // Request the next chunk of data from the ESP32
   }
 }

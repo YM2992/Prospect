@@ -35,6 +35,21 @@ header img {
     width: 100%;
 }
 
+#contoursDiv {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.contourPxl {
+    position: absolute;
+    height: 1%;
+    width: 1%;
+    color: red;
+    background-color: red;
+}
+
 #imgProcessingProgress {
     height: 25px;
     width: 500px;
@@ -105,6 +120,16 @@ header img {
     top: 160px;
     left: 700px;
 }
+
+
+#objectNumber {
+    visibility: hidden;
+}
+
+#objectNumberTxt {
+    visibility: hidden;
+}
+
 
 #beginCutting {
     height: 100px;

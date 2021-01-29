@@ -43,6 +43,7 @@ header img {
 }
 
 .contourPxl {
+    padding: 0 !important;
     position: absolute;
     height: 1%;
     width: 1%;
@@ -54,7 +55,7 @@ header img {
     opacity: 1;
 }
 .contourDisabled {
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
 #imgProcessingProgress {

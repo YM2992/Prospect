@@ -1,6 +1,6 @@
 
 /* Global Variables */
-const HostIP = '192.168.1.111';
+const HostIP = '192.168.1.107';
 
 /* Event logs */
 function newEventLogs(messages) {
@@ -89,12 +89,6 @@ $(document).ready(function() {
         var eventLogsDiv = document.getElementById('eventLogsDiv');
         eventLogsDiv.scrollTop = eventLogsDiv.scrollHeight;
     });
-
-    const objectNumberSldr = document.getElementById('objectNumber');
-    const objectNumberTxt = document.getElementById('objectNumberTxt');
-    objectNumberSldr.oninput = function() {
-        objectNumberTxt.value = this.value;
-    }
 });
 
 
@@ -143,12 +137,13 @@ function toggleContour(newContourPixel) {
         const contourId = classValues.charAt(classValues.indexOf('contourId') + 9);
         const contourClassName = `contourId${contourId}`;
         const contourGroupElements = document.getElementsByClassName(contourClassName);
+
         let oldTogVal = '';
         let newTogVal = '';
-        if (contourGroupElements[0].classList.contains('contourEnabled')) {
+        if (contourGroupElements.item(0).classList.contains('contourEnabled')) {
             oldTogVal = 'contourEnabled';
             newTogVal = 'contourDisabled';
-        } else if (contourGroupElements[0].classList.contains('contourDisabled')) {
+        } else if (contourGroupElements.item(0).classList.contains('contourDisabled')) {
             oldTogVal = 'contourDisabled';
             newTogVal = 'contourEnabled';
         }
@@ -160,7 +155,8 @@ function toggleContour(newContourPixel) {
 }
 function addContourOnImage(contourId, x, y) {
     const contoursElement = document.getElementById('contoursDiv');
-    let newContourPixel = document.createElement('button');
+    let newContourPixel = document.createElement('input');
+    newContourPixel.type = 'button';
     newContourPixel.classList.add('contourPxl');
     newContourPixel.classList.add(`contourId${contourId}`);
     newContourPixel.classList.add('contourEnabled');
@@ -221,11 +217,6 @@ socket.on('processing', (data) => {
 })
 socket.on('processed', (data) => {
     document.getElementById('beginCutting').style.visibility = "visible";
-    document.getElementById('objectNumber').style.visibility = "visible";
-    document.getElementById('objectNumber').setAttribute('max', data.objectNumber);
-    document.getElementById('objectNumber').setAttribute('value', data.objectNumber);
-    document.getElementById('objectNumberTxt').style.visibility = "visible";
-    document.getElementById('objectNumberTxt').setAttribute('value', data.objectNumber);
 });
 
 // When the socket connection receives an event, handle the data given (progress of the image processing and cutting)

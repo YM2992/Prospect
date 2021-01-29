@@ -48,6 +48,13 @@ header img {
     width: 1%;
     color: red;
     background-color: red;
+    border: none;
+}
+.contourEnabled {
+    opacity: 1;
+}
+.contourDisabled {
+    opacity: 0.5;
 }
 
 #imgProcessingProgress {

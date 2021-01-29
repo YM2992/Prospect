@@ -244,7 +244,7 @@ function getImageContours(image) {
         individualFullContour = sortedFullContours[v];
         individualFullContour = individualFullContour.getPoints();
         //console.log(individualFullContour);
-        io.emit('processing', {'points': individualFullContour});
+        io.emit('processing', {'contourId': v,'points': individualFullContour});
     }
     
     /*let newContours = threshold2.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);

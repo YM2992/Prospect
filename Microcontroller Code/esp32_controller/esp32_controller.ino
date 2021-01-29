@@ -1,6 +1,6 @@
 // ESP32 microcontroller code || Receives data from web server and relays to the arduino.
 
-// Require the WiFi and HTTPClient libraries required
+// Require the WiFi and HTTPClient libraries
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClient.h>
@@ -70,11 +70,13 @@ void loop() {
           return;
         }
 
-        if (String(actionRes) == "processed") {
-          //Serial.println("get chunk");
+        if (String(actionRes) == "processing" or String(actionRes) == "processed") {
+          chunkId = 0;
+        } else if (String(actionRes) == "cutting") {
           HTTPClient httpIns;
 
           httpIns.begin("http://192.168.1.107:8080/MCInstructions?id=" + String(chunkId));
+          //Serial.println(chunkId);
           int httpInsCode = httpIns.GET();
 
           if (httpInsCode > 0) {
@@ -96,8 +98,8 @@ void loop() {
   }
 
   while (Myserial.available()) {
-    const String serialS = Myserial.readString();
-
+    String serialS = Myserial.readString();
+    serialS.trim();
     if (serialS == "received") {
         chunkSend = false;
     } else if (serialS == "next") {

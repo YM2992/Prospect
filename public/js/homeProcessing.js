@@ -1,6 +1,6 @@
 
 /* Global Variables */
-const HostIP = '192.168.1.107';
+const HostIP = '192.168.43.159';//'192.168.1.107';
 
 /* Event logs */
 function newEventLogs(messages) {
@@ -21,11 +21,6 @@ function newEventLogs(messages) {
     }
 }
 
-
-/* Prevent page reload */
-window.onbeforeunload = function() {
-    return console.log("reloaded page");
-}
 
 // Start a socket.io connection with the server
 const socket = io(`http://${HostIP}:8080`, {
@@ -141,13 +136,41 @@ function progressDivsLoaded() {
     }
 }
 
-function addContourOnImage(x, y) {
+function toggleContour(newContourPixel) {
+    if (newContourPixel.classList.value.includes('contourId')) {
+        // improve efficiency by using newContourPixel.classList.contains()
+        const classValues = newContourPixel.classList.value;
+        const contourId = classValues.charAt(classValues.indexOf('contourId') + 9);
+        const contourClassName = `contourId${contourId}`;
+        const contourGroupElements = document.getElementsByClassName(contourClassName);
+        let oldTogVal = '';
+        let newTogVal = '';
+        if (contourGroupElements[0].classList.contains('contourEnabled')) {
+            oldTogVal = 'contourEnabled';
+            newTogVal = 'contourDisabled';
+        } else if (contourGroupElements[0].classList.contains('contourDisabled')) {
+            oldTogVal = 'contourDisabled';
+            newTogVal = 'contourEnabled';
+        }
+
+        for (i in contourGroupElements) {
+            contourGroupElements.item(i).classList.replace(oldTogVal, newTogVal);
+        }
+    }
+}
+function addContourOnImage(contourId, x, y) {
     const contoursElement = document.getElementById('contoursDiv');
-    let newContourPixel = document.createElement('div');
+    let newContourPixel = document.createElement('button');
     newContourPixel.classList.add('contourPxl');
+    newContourPixel.classList.add(`contourId${contourId}`);
+    newContourPixel.classList.add('contourEnabled');
     contoursElement.appendChild(newContourPixel);
     newContourPixel.style.left = `${x * 5}px`;
     newContourPixel.style.top = `${y * 5}px`;
+    
+    newContourPixel.onclick = function() {
+        toggleContour(newContourPixel);
+    }
 }
 
 var processingProgress = 0;
@@ -193,7 +216,7 @@ socket.on('event', (data) => {
 
 socket.on('processing', (data) => {
     for (i in data.points) {
-        addContourOnImage(data.points[i].x, data.points[i].y);
+        addContourOnImage(data.contourId, data.points[i].x, data.points[i].y);
     }
 })
 socket.on('processed', (data) => {

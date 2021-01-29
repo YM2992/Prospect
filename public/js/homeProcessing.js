@@ -1,6 +1,6 @@
 
 /* Global Variables */
-const HostIP = '192.168.43.159';//'192.168.1.107';
+const HostIP = '192.168.1.111';
 
 /* Event logs */
 function newEventLogs(messages) {

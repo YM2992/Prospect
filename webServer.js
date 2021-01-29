@@ -164,7 +164,7 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             res.send("success - webMsg");
             const currentDate = new Date().getTime() / 1000;
             io.emit('completion time', (currentDate + shadedPixelCount));
-            updateMCActions('begin cutting');
+            updateMCActions('cutting');
             break;
     }
 });

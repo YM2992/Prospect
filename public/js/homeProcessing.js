@@ -1,6 +1,8 @@
 
 /* Global Variables */
 const HostIP = '192.168.1.107';
+var contourIds = [];
+
 
 /* Event logs */
 function newEventLogs(messages) {
@@ -66,10 +68,11 @@ $(document).ready(function() {
 
     // Begin cutting process
     $('#beginCutting').click(function() {
+        console.log(contourIds);
         $.ajax({
             url: '../../webMsg',
             type: 'POST',
-            data: {'message': 'begin cutting'},
+            data: {'message': 'begin cutting', 'contourIds': `${contourIds}`},
             success: function(data) {
                 console.log(data);
             }
@@ -143,9 +146,19 @@ function toggleContour(newContourPixel) {
         if (contourGroupElements.item(0).classList.contains('contourEnabled')) {
             oldTogVal = 'contourEnabled';
             newTogVal = 'contourDisabled';
+
+            const idInArray = contourIds.indexOf(`${contourId}`);
+            if (idInArray > -1) {
+                contourIds.splice(idInArray, 1);
+            }
         } else if (contourGroupElements.item(0).classList.contains('contourDisabled')) {
             oldTogVal = 'contourDisabled';
             newTogVal = 'contourEnabled';
+
+            const idInArray = contourIds.indexOf(`${contourId}`);
+            if (idInArray <= -1) {
+                contourIds.push(`${contourId}`);
+            }
         }
 
         for (i in contourGroupElements) {
@@ -163,7 +176,12 @@ function addContourOnImage(contourId, x, y) {
     contoursElement.appendChild(newContourPixel);
     newContourPixel.style.left = `${x * 5}px`;
     newContourPixel.style.top = `${y * 5}px`;
-    
+
+    const idInArray = contourIds.indexOf(`${contourId}`);
+    if (idInArray <= -1) {
+        contourIds.push(`${contourId}`);
+    }
+
     newContourPixel.onclick = function() {
         toggleContour(newContourPixel);
     }

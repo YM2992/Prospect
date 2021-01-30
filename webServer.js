@@ -1,6 +1,7 @@
 
 // Global variables //
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
+var contourIdsPoints = [];
 
 
 // Get host IP
@@ -159,6 +160,7 @@ app.use(bodyParser.json());
 
 app.post('/webMsg', (req, res) => { // Handle the POST request
     console.log(req.body.message);
+    console.log(req.body.contourIds);
     switch (req.body.message) {
         case 'begin cutting':
             res.send("success - webMsg");
@@ -245,6 +247,7 @@ function getImageContours(image) {
         individualFullContour = individualFullContour.getPoints();
         //console.log(individualFullContour);
         io.emit('processing', {'contourId': v,'points': individualFullContour});
+        contourIdsPoints.push({id: v, contourPnts: individualFullContour});
     }
     
     /*let newContours = threshold2.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);

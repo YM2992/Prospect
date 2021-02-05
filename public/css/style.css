@@ -53,9 +53,13 @@ header img {
 }
 .contourEnabled {
     opacity: 1;
+    color: red;
+    background-color: red;
 }
 .contourDisabled {
     opacity: 0.3;
+    color: rgb(255, 99, 99);
+    background-color: rgb(255, 99, 99);
 }
 
 #imgProcessingProgress {

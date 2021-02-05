@@ -1,5 +1,6 @@
 
 // Global variables //
+var storedFile = null;
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
 var contourIdsPoints = [];
 
@@ -163,13 +164,34 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
     console.log(req.body.contourIds);
     switch (req.body.message) {
         case 'begin cutting':
+            if (req.body.contourIds.length <= 0) {
+                return io.emit('event', {1: {'message': `ERROR | 1 or more contours/image outlines must be selected`, 'colour': '235, 0, 0'}});
+            }
+            
+            const contourIds = req.body.contourIds.split(',');
+            let contourPoints = [];
+            let imagePoints = [];
+            
+            for (i in contourIds) {
+                contourPoints.push(contourIdsPoints[parseInt(contourIds[i]) - 1]);
+            }
+
+            for (i in contourPoints) {
+                for (v in contourPoints[i]) {
+                    imagePoints.push(contourPoints[i][v]);
+                }
+            }
+
             res.send("success - webMsg");
             const currentDate = new Date().getTime() / 1000;
             io.emit('completion time', (currentDate + shadedPixelCount));
+
+            addToDatabase(imagePoints, storedFile);
             updateMCActions('cutting');
             break;
     }
 });
+
 
 // Generate a randomised string of 15 characters for the uploaded image filename
 function generateFileName() {
@@ -195,6 +217,7 @@ let upload = multer({ dest: 'ProcessingImages/', storage: storage});
 app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST request
     console.log(req.file);
     res.send("success");
+    storedFile = req.file;
     processImage(req.file); // Call the processImage function to process the image into data suitable for the microcontroller
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -222,7 +245,9 @@ const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer
 
 function getImageContours(image) {
     const grayImage = image.bgrToGray();
-    const threshold = grayImage.threshold(200, 255, cv.THRESH_BINARY);
+    const threshold = grayImage.threshold(230, 255, cv.THRESH_BINARY);
+
+    cv.imshowWait('MLP', threshold);
     //const threshold2 = threshold;
 
     let contours = threshold.findContours(cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE); // cv.CHAIN_APPROX_NONE for every single point, cv.CHAIN_APPROX_SIMPLE for end points
@@ -235,6 +260,19 @@ function getImageContours(image) {
         individualContour = individualContour.getPoints();
         //console.log(individualContour);
         individualContours.push(individualContour);
+        contourIdsPoints.push({id: v, contourPnts: individualContour});
+    }
+    //console.log(contourIdsPoints);
+
+    for (i in contourIdsPoints) {
+        let newArray = [];
+        for (v in contourIdsPoints[i].contourPnts) {
+            const fixedXY = [contourIdsPoints[i].contourPnts[v].x, contourIdsPoints[i].contourPnts[v].y];
+            newArray.push(fixedXY);
+        }
+        //console.log("newArray: ");
+        //console.log(newArray);
+        contourIdsPoints[i] = newArray;
     }
 
 
@@ -247,7 +285,6 @@ function getImageContours(image) {
         individualFullContour = individualFullContour.getPoints();
         //console.log(individualFullContour);
         io.emit('processing', {'contourId': v,'points': individualFullContour});
-        contourIdsPoints.push({id: v, contourPnts: individualFullContour});
     }
     
     /*let newContours = threshold2.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
@@ -313,7 +350,7 @@ function processImage(imageFileDetails) {
     let contoursAmount = 0;
     for (i in imageContours) {
         for (v in imageContours[i]) {
-            console.log(imageContours[i][v]);
+            //console.log(imageContours[i][v]);
             const fixedXY = [imageContours[i][v].x, imageContours[i][v].y];
             imagePoints.push(fixedXY);
         }
@@ -342,11 +379,17 @@ function arrayToChunks(array, chunkSize) {
     return chunkedArray;
 }
 
+
 // Add imageFile details and microcontroller instructions to the database to be served on '/MCInstructions' for the ESP32 to read
 function addToDatabase(imagePoints, imageFileDetails) {
     if (!imagePoints) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imagePoints' RECEIVED");
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
     
+    console.log("imgPnts: ")
+    console.log(imagePoints);
+    console.log("imgDet: ")
+    console.log(imageFileDetails)
+
     formattedPoints = imagePoints;
     formattedPoints = arrayToChunks(formattedPoints, 10);
 

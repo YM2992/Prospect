@@ -1,6 +1,6 @@
 
 /* Global Variables */
-const HostIP = '192.168.1.107';
+const HostIP = '192.168.43.159';
 var contourIds = [];
 
 
@@ -34,6 +34,22 @@ const socket = io(`http://${HostIP}:8080`, {
 
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
+    // Drag and drop file input
+    document.addEventListener('dragenter', function(event) {
+        event.preventDefault();
+        console.log("dragging")
+    });
+
+    document.addEventListener('drop', function(event) {
+        event.preventDefault();
+        console.log("dropped")
+        if (event.target.id == 'imagePreviewDiv') {
+            console.log('dropped in preview')
+            document.getElementById('fileInput').files[0] = event.dataTransfer.getData('files')[0];
+        }
+    });
+
+
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e) {
         e.preventDefault();
@@ -68,11 +84,19 @@ $(document).ready(function() {
 
     // Begin cutting process
     $('#beginCutting').click(function() {
-        console.log(contourIds);
+        document.getElementById('beginCutting').style.visibility = "hidden";
+        $('#beginCutting').attr('disabled', true);
+
+        if (contourIds.length > 0) {
+            contourIds = `${contourIds}`
+        } else {
+            contourIds = null;
+        }
+
         $.ajax({
             url: '../../webMsg',
             type: 'POST',
-            data: {'message': 'begin cutting', 'contourIds': `${contourIds}`},
+            data: {'message': 'begin cutting', 'contourIds': contourIds},
             success: function(data) {
                 console.log(data);
             }

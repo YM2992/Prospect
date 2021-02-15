@@ -247,7 +247,7 @@ function getImageContours(image) {
     const grayImage = image.bgrToGray();
     const threshold = grayImage.threshold(230, 255, cv.THRESH_BINARY);
 
-    cv.imshowWait('MLP', threshold);
+    //cv.imshowWait('MLP', threshold);
     //const threshold2 = threshold;
 
     let contours = threshold.findContours(cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE); // cv.CHAIN_APPROX_NONE for every single point, cv.CHAIN_APPROX_SIMPLE for end points

@@ -32,21 +32,36 @@ const socket = io(`http://${HostIP}:8080`, {
     }
 });
 
+
+function fileDropDivDragEnter(ev) {
+    ev.preventDefault();
+        console.log("dragenter");
+}
+function fileDropDivDragOver(ev) {
+    ev.preventDefault();
+    console.log("dragover");
+    ev.dataTransfer.dropEffect = 'move';
+}
+function fileDropDivDragDrop(ev) {
+    ev.preventDefault();
+    console.log("dropped");
+    document.getElementById('fileInput').files[0] = ev.dataTransfer.getData('files')[0];
+    console.log(ev.dataTransfer)
+}
+
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
     // Drag and drop file input
-    document.addEventListener('dragenter', function(event) {
-        event.preventDefault();
-        console.log("dragging")
-    });
+    const fileDropDiv = document.getElementById('fileDropPoint');
 
-    document.addEventListener('drop', function(event) {
+    fileDropDiv.addEventListener('dragenter', function(event) {
         event.preventDefault();
-        console.log("dropped")
-        if (event.target.id == 'imagePreviewDiv') {
-            console.log('dropped in preview')
-            document.getElementById('fileInput').files[0] = event.dataTransfer.getData('files')[0];
-        }
+    });
+    fileDropDiv.addEventListener('dragover', function(event) {
+        event.preventDefault();
+    });
+    fileDropDiv.addEventListener('drop dragdrop', function(event) {
+        event.preventDefault();
     });
 
 
@@ -119,6 +134,10 @@ $(document).ready(function() {
 });
 
 
+/* Drag 'n' Drop image feature */
+
+
+
 /* Image obtaining and relaying */
 let acceptedFileTypes = ['image/png']
 
@@ -128,7 +147,7 @@ function getFile(filePath) {
 }
 
 function getOutput() {
-    let imageFile = document.getElementById('fileInput').files[0]
+    let imageFile = document.getElementById('fileInput').files[0];
 
     if (!imageFile) {
         console.warn("No image received.");
@@ -136,14 +155,23 @@ function getOutput() {
         return;
     }
     if (acceptedFileTypes.includes(imageFile.type)) {
-        console.log("Accepted file type")
+        console.log("Accepted file type");
     } else {
-        console.log("Declined file type")
+        console.log("Declined file type");
+        document.getElementById('previewImg').src = "";
+        document.getElementById('submitImage').style.visibility = "hidden";
+        document.getElementById('fileInput').disabled = false;
+        document.getElementById('submitImage').disabled = false;
+        document.getElementById('imgProcessingProgress').style.visibility = "hidden";
+        document.getElementById('fileInput').value = null;
+        newEventLogs({1: {'message': "ERROR | Incorrect file submission type (must be '.png')", 'colour': '235, 0, 0'}});
+        return;
     };
 
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
 
     document.getElementById('submitImage').style.visibility = "visible";
+    document.getElementById('fileDropPointImg').style.visibility = "hidden";
 }
 
 

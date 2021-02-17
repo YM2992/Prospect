@@ -4,6 +4,8 @@ var storedFile = null;
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
 var contourIdsPoints = [];
 
+var wireHeat = false; // true: Wire is receiving current and hot, false: Wire is not receiving current but may be hot
+
 
 // Get host IP
 const { networkInterfaces } = require('os');
@@ -31,11 +33,11 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database(dbFile);
 
 db.serialize(() => {
-    /*db.exec("DROP TABLE StyrocutData");
-    db.exec("DROP TABLE Instructions");*/
+    //db.exec("DROP TABLE StyrocutData");
+    //db.exec("DROP TABLE Instructions");
     
     db.exec("CREATE TABLE IF NOT EXISTS StyrocutData (id INTEGER PRIMARY KEY AUTOINCREMENT, cutting BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT)");
-    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT)")
+    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, wireHeat BOOLEAN)")
     //db.run(`INSERT INTO Instructions (id, action, message) VALUES (NULL, '', '')`);
 
     console.log("Database initialised.");
@@ -93,17 +95,17 @@ app.get('/MCActions', (req, res) => {
     });
 });
 
-function updateMCActions(action, message) {
+function updateMCActions(action, message, wireHeat) {
     let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'cutting' | 'warning' | 'error' |
     let messageVar = message || "";
+    let wireHeatVar = wireHeat || false;
 
     db.serialize(() => {
-        db.each(`SELECT * FROM Instructions WHERE cutting='1'`, (error, row) => {
-            db.run(`UPDATE Instructions SET action='${actionVar}', message='${messageVar}' WHERE id='1'`)
-        });
+        db.run(`UPDATE Instructions SET action='${actionVar}', message='${messageVar}', wireHeat='${wireHeatVar}' WHERE id='1'`)
     });
 }
-//updateMCActions();
+//db.run(`INSERT INTO Instructions (id, action, message, wireHeat) VALUES (NULL, 'idle', '', false)`)
+//updateMCActions("idle", "Test", false);
 
 // Get the current instructions from the database -- Microcontroller reads from this
 app.get('/MCInstructions', (req, res) => {
@@ -111,6 +113,8 @@ app.get('/MCInstructions', (req, res) => {
     if (!dataPacketId) {
         db.serialize(() => {
             db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => { // Retrieves the records from the StyrocutData table in descending order of value id
+                if (!rows[0]) {return res.send("{}")};
+
                 res.send(JSON.stringify(rows[0])); // Gets the latest record from the StyrocutData table
             });
         });
@@ -118,6 +122,9 @@ app.get('/MCInstructions', (req, res) => {
         db.serialize(() => {
             db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => {
                 let response = "";
+
+                if (!rows[0]) {return res.send("{}")};
+
                 const formattedPoints = JSON.parse(rows[0].formattedPoints);
                 const fPointsLength = formattedPoints.length;
                 
@@ -187,7 +194,12 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             io.emit('completion time', (currentDate + shadedPixelCount));
 
             addToDatabase(imagePoints, storedFile);
-            updateMCActions('cutting');
+            updateMCActions('cutting', null, true);
+            break;
+        
+        case 'toggle wire heat':
+            wireHeat = !wireHeat;
+            io.emit('nichrome heat', wireHeat.toString());
             break;
     }
 });
@@ -215,7 +227,7 @@ let upload = multer({ dest: 'ProcessingImages/', storage: storage});
 
 
 app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST request
-    console.log(req.file);
+    //console.log(req.file);
     res.send("success");
     storedFile = req.file;
     processImage(req.file); // Call the processImage function to process the image into data suitable for the microcontroller
@@ -310,13 +322,13 @@ function processImage(imageFileDetails) {
     shadedPixelCount = 0; // Reset shadedPixelCount back to 0 to prevent miscalculations/errors
 
     const image = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
-    console.log(image);
+    //console.log(image);
 
     // Ensure the image is the valid size (100 by 100 pixels)
     if (image.rows != 100 || image.cols != 100) {
         io.emit('failed submission');
         io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${image.rows}x${image.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
-        console.log("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
+        console.warn("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
         return;
     }
 
@@ -343,7 +355,7 @@ function processImage(imageFileDetails) {
 
     // Debugging code to print the totalPixelCount, shadedPixelCount and imagePoints to the console
     console.log(`Pixels: ${totalPixelCount}`);
-    //console.log(`Shaded pixels: ${shadedPixelCount}`);
+    console.log(`Shaded pixels: ${shadedPixelCount}`);
     //console.log(imagePoints);
 
     let imageContours = getImageContours(image);

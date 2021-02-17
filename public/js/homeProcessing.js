@@ -52,7 +52,7 @@ function fileDropDivDragDrop(ev) {
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
     // Drag and drop file input
-    const fileDropDiv = document.getElementById('fileDropPoint');
+    /*const fileDropDiv = document.getElementById('fileDropPoint');
 
     fileDropDiv.addEventListener('dragenter', function(event) {
         event.preventDefault();
@@ -62,7 +62,7 @@ $(document).ready(function() {
     });
     fileDropDiv.addEventListener('drop dragdrop', function(event) {
         event.preventDefault();
-    });
+    });*/
 
 
     // When the document is ready, remove the default redirection of the form submit
@@ -171,7 +171,7 @@ function getOutput() {
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
 
     document.getElementById('submitImage').style.visibility = "visible";
-    document.getElementById('fileDropPointImg').style.visibility = "hidden";
+    //document.getElementById('fileDropPointImg').style.visibility = "hidden";
 }
 
 

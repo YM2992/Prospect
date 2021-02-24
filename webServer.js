@@ -73,7 +73,9 @@ io.on('disconnect', () => {
     console.log("socket.io disconnected");
 });
 
-server.listen(8080, () => {console.log(`Server started on ${HostIP}:8080`)}); // Listen to port 8080
+server.listen(8080, () => {
+    console.log(`Server started on ${HostIP}:8080`);
+}); // Listen to port 8080
 
 
 const multer = require('multer'); // Require the 'multer' npm library for use in this script
@@ -98,7 +100,12 @@ app.get('/MCActions', (req, res) => {
 function updateMCActions(action, message, wireHeat) {
     let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'cutting' | 'warning' | 'error' |
     let messageVar = message || "";
-    let wireHeatVar = wireHeat || false;
+    let wireHeatVar = false;
+    if (typeof wireHeat == "boolean") {
+        wireHeatVar = wireHeat || fals
+    } else if (typeof wireHeat == "string") {
+        if (wireHeat == "toggle") {wireHeatVar = !wireHeatVar};
+    }
 
     db.serialize(() => {
         db.run(`UPDATE Instructions SET action='${actionVar}', message='${messageVar}', wireHeat='${wireHeatVar}' WHERE id='1'`)
@@ -167,8 +174,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.post('/webMsg', (req, res) => { // Handle the POST request
-    console.log(req.body.message);
-    console.log(req.body.contourIds);
+    console.log(`req.body.message: ${req.body.message}`);
+    console.log(`req.body.contourIds: ${req.body.contourIds}`);
     switch (req.body.message) {
         case 'begin cutting':
             if (req.body.contourIds.length <= 0) {
@@ -178,6 +185,9 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             const contourIds = req.body.contourIds.split(',');
             let contourPoints = [];
             let imagePoints = [];
+
+            console.log("contourIdsPoints:");
+            console.log(contourIdsPoints);
             
             for (i in contourIds) {
                 contourPoints.push(contourIdsPoints[parseInt(contourIds[i]) - 1]);
@@ -276,7 +286,16 @@ function getImageContours(image) {
     }
     //console.log(contourIdsPoints);
 
+    console.log("======== contourIdsPoints pre ==========");
+    console.log(contourIdsPoints);
+    
     for (i in contourIdsPoints) {
+        if (Array.isArray(contourIdsPoints[i])) {
+            contourIdsPoints.splice(i, 1);
+            continue;
+        }
+
+        console.log(`permitted contourId: ${contourIdsPoints[i].id}, ${contourIdsPoints[i].contourPnts}`)
         let newArray = [];
         for (v in contourIdsPoints[i].contourPnts) {
             const fixedXY = [contourIdsPoints[i].contourPnts[v].x, contourIdsPoints[i].contourPnts[v].y];
@@ -307,10 +326,16 @@ function getImageContours(image) {
     cv.imshowWait("Image", threshold2);*/
 
     //console.log(individualContours);
+    
+    console.log("======== contourIdsPoints post ==========");
+    console.log(contourIdsPoints);
+    console.log("\n");
+
     return individualContours;
 }
 
 function processImage(imageFileDetails) {
+    console.log("\n====== function 'processImage' OUTPUT START ======");
     if (!imageFileDetails) {
         io.emit('event', {1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
         return;
@@ -375,7 +400,7 @@ function processImage(imageFileDetails) {
         updateMCActions('processed', "begin taking data");
     }, 3000);
 
-
+    console.log("====== function 'processImage' OUTPUT END ======\n");
     return addToDatabase(imagePoints, imageFileDetails);
 }
 
@@ -394,13 +419,16 @@ function arrayToChunks(array, chunkSize) {
 
 // Add imageFile details and microcontroller instructions to the database to be served on '/MCInstructions' for the ESP32 to read
 function addToDatabase(imagePoints, imageFileDetails) {
+    console.log("\n====== function 'addToDatabase' OUTPUT START ======");
     if (!imagePoints) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imagePoints' RECEIVED");
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
     
-    console.log("imgPnts: ")
+    console.log("imgPnts: ");
     console.log(imagePoints);
-    console.log("imgDet: ")
-    console.log(imageFileDetails)
+    console.log("imgDet: ");
+    console.log(imageFileDetails);
+    
+
 
     formattedPoints = imagePoints;
     formattedPoints = arrayToChunks(formattedPoints, 10);
@@ -414,6 +442,6 @@ function addToDatabase(imagePoints, imageFileDetails) {
         });
         db.run(`INSERT INTO StyrocutData (id, cutting, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}')`)
     });
-    
+    console.log("====== function 'addToDatabase' OUTPUT END ======\n");
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

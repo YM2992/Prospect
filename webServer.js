@@ -35,7 +35,7 @@ const db = new sqlite3.Database(dbFile);
 db.serialize(() => {
     //db.exec("DROP TABLE StyrocutData");
     //db.exec("DROP TABLE Instructions");
-    
+
     db.exec("CREATE TABLE IF NOT EXISTS StyrocutData (id INTEGER PRIMARY KEY AUTOINCREMENT, cutting BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT)");
     db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, wireHeat BOOLEAN)")
     //db.run(`INSERT INTO Instructions (id, action, message) VALUES (NULL, '', '')`);
@@ -134,13 +134,13 @@ app.get('/MCInstructions', (req, res) => {
 
                 const formattedPoints = JSON.parse(rows[0].formattedPoints);
                 const fPointsLength = formattedPoints.length;
-                
+
                 if (dataPacketId >= fPointsLength) {
                     return res.send("error");
                 }
 
                 response = formattedPoints[dataPacketId];
-                
+
                 //console.log(response);
                 res.send(response);
             });
@@ -181,14 +181,14 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             if (req.body.contourIds.length <= 0) {
                 return io.emit('event', {1: {'message': `ERROR | 1 or more contours/image outlines must be selected`, 'colour': '235, 0, 0'}});
             }
-            
+
             const contourIds = req.body.contourIds.split(',');
             let contourPoints = [];
             let imagePoints = [];
 
             console.log("contourIdsPoints:");
             console.log(contourIdsPoints);
-            
+
             for (i in contourIds) {
                 contourPoints.push(contourIdsPoints[parseInt(contourIds[i]) - 1]);
             }
@@ -206,7 +206,7 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             addToDatabase(imagePoints, storedFile);
             updateMCActions('cutting', null, true);
             break;
-        
+
         case 'toggle wire heat':
             wireHeat = !wireHeat;
             io.emit('nichrome heat', wireHeat.toString());
@@ -264,6 +264,45 @@ const orderRecentFiles = (dir) => {
 // https://www.npmjs.com/package/image-outline
 
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
+const { debug } = require('console');
+
+
+
+/////////////////////
+
+// let debugArray = [
+//     [[0, 0], [3, 5], [6, 7]],
+//     [[ 27, 31 ], [ 28, 30 ], [ 31, 30 ], [ 32, 31 ], [ 31, 32 ], [ 28, 32 ]],
+//     [[ 58, 30 ], [ 59, 29 ], [ 61, 29 ], [ 62, 30 ], [ 61, 31 ], [ 59, 31 ]],
+//     [[ 49, 33 ], [ 50, 32 ], [ 52, 34 ], [ 51, 35 ], [ 50, 35 ], [ 49, 34 ]],
+//     [ [ 60, 32 ], [ 61, 31 ], [ 62, 32 ], [ 61, 33 ] ],
+//     {
+//         id: 1,
+//         contourPnts: [[0, 4], [9, 19], [8, 87]]
+//     },
+//     {
+//         id: 2,
+//         contourPnts: [[0, 4], [9, 19], [8, 87]]
+//     },
+//     {
+//         id: 3,
+//         contourPnts: [[0, 4], [9, 19], [8, 87]]
+//     },
+//     {
+//         id: 4,
+//         contourPnts: [[0, 4], [9, 19], [8, 87]]
+//     },
+// ]
+
+// var debugArrayFiltered = debugArray.filter(function(element) {
+//     return !Array.isArray(element);
+// });
+
+// console.log(debugArrayFiltered)
+
+/////////////////////
+
+
 
 function getImageContours(image) {
     const grayImage = image.bgrToGray();
@@ -288,21 +327,20 @@ function getImageContours(image) {
 
     console.log("======== contourIdsPoints pre ==========");
     console.log(contourIdsPoints);
-    
-    for (i in contourIdsPoints) {
-        if (Array.isArray(contourIdsPoints[i])) {
-            contourIdsPoints.splice(i, 1);
-            continue;
-        }
 
-        console.log(`permitted contourId: ${contourIdsPoints[i].id}, ${contourIdsPoints[i].contourPnts}`)
+    let contourIdsPointsFiltered = contourIdsPoints.filter(function(element) {
+        return !Array.isArray(element);
+    });
+    contourIdsPoints = contourIdsPointsFiltered;
+
+    for (i in contourIdsPoints) {
         let newArray = [];
         for (v in contourIdsPoints[i].contourPnts) {
             const fixedXY = [contourIdsPoints[i].contourPnts[v].x, contourIdsPoints[i].contourPnts[v].y];
             newArray.push(fixedXY);
         }
-        //console.log("newArray: ");
-        //console.log(newArray);
+        // console.log("newArray: ");
+        // console.log(newArray);
         contourIdsPoints[i] = newArray;
     }
 
@@ -317,7 +355,7 @@ function getImageContours(image) {
         //console.log(individualFullContour);
         io.emit('processing', {'contourId': v,'points': individualFullContour});
     }
-    
+
     /*let newContours = threshold2.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
     let newSortedContours = newContours.sort((c0, c1) => c1.area - c0.area)[1];
     console.log(newContours);
@@ -326,7 +364,7 @@ function getImageContours(image) {
     cv.imshowWait("Image", threshold2);*/
 
     //console.log(individualContours);
-    
+
     console.log("======== contourIdsPoints post ==========");
     console.log(contourIdsPoints);
     console.log("\n");
@@ -365,8 +403,8 @@ function processImage(imageFileDetails) {
             io.emit('processing image progress', {x: x, y: y});
 
             totalPixelCount++ // Increment totalPixelCount
-            
-            
+
+
             const [b, g, r] = image.atRaw(x, y) // Get the Red/Green/Blue values on the image at pixel (x, y)
             //console.log(`RGB: ${r}, ${g}, ${b}`)
 
@@ -374,7 +412,7 @@ function processImage(imageFileDetails) {
                 imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
                 shadedPixelCount++ // Increment shadedPixelCount
             }
-            
+
         }
     }
 
@@ -422,12 +460,12 @@ function addToDatabase(imagePoints, imageFileDetails) {
     console.log("\n====== function 'addToDatabase' OUTPUT START ======");
     if (!imagePoints) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imagePoints' RECEIVED");
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
-    
+
     console.log("imgPnts: ");
     console.log(imagePoints);
     console.log("imgDet: ");
     console.log(imageFileDetails);
-    
+
 
 
     formattedPoints = imagePoints;

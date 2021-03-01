@@ -7,6 +7,14 @@ var contourIdsPoints = [];
 var wireHeat = false; // true: Wire is receiving current and hot, false: Wire is not receiving current but may be hot
 
 
+// Global functions //
+function debugLog(message) {
+    //if (!typeof message == 'string') return console.warn('function debugLog: Enter a valid string');
+    message = message.toString();
+    console.log('\x1b[34m', message, '\x1b[0m');
+};
+
+
 // Get host IP
 const { networkInterfaces } = require('os');
 const nets = networkInterfaces();
@@ -186,8 +194,8 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             let contourPoints = [];
             let imagePoints = [];
 
-            console.log("contourIdsPoints:");
-            console.log(contourIdsPoints);
+            // console.log("contourIdsPoints:");
+            // console.log(contourIdsPoints);
 
             for (i in contourIds) {
                 contourPoints.push(contourIdsPoints[parseInt(contourIds[i]) - 1]);
@@ -210,6 +218,9 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
         case 'toggle wire heat':
             wireHeat = !wireHeat;
             io.emit('nichrome heat', wireHeat.toString());
+            db.serialize(() => {
+
+            });
             break;
     }
 });
@@ -325,8 +336,8 @@ function getImageContours(image) {
     }
     //console.log(contourIdsPoints);
 
-    console.log("======== contourIdsPoints pre ==========");
-    console.log(contourIdsPoints);
+    // console.log("======== contourIdsPoints pre ==========");
+    // console.log(contourIdsPoints);
 
     let contourIdsPointsFiltered = contourIdsPoints.filter(function(element) {
         return !Array.isArray(element);
@@ -365,15 +376,15 @@ function getImageContours(image) {
 
     //console.log(individualContours);
 
-    console.log("======== contourIdsPoints post ==========");
-    console.log(contourIdsPoints);
-    console.log("\n");
+    // console.log("======== contourIdsPoints post ==========");
+    // console.log(contourIdsPoints);
+    // console.log("\n");
 
     return individualContours;
 }
 
 function processImage(imageFileDetails) {
-    console.log("\n====== function 'processImage' OUTPUT START ======");
+    // console.log("\n====== function 'processImage' OUTPUT START ======");
     if (!imageFileDetails) {
         io.emit('event', {1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
         return;
@@ -438,7 +449,7 @@ function processImage(imageFileDetails) {
         updateMCActions('processed', "begin taking data");
     }, 3000);
 
-    console.log("====== function 'processImage' OUTPUT END ======\n");
+    // console.log("====== function 'processImage' OUTPUT END ======\n");
     return addToDatabase(imagePoints, imageFileDetails);
 }
 
@@ -457,15 +468,14 @@ function arrayToChunks(array, chunkSize) {
 
 // Add imageFile details and microcontroller instructions to the database to be served on '/MCInstructions' for the ESP32 to read
 function addToDatabase(imagePoints, imageFileDetails) {
-    console.log("\n====== function 'addToDatabase' OUTPUT START ======");
+    //console.log("\n====== function 'addToDatabase' OUTPUT START ======");
     if (!imagePoints) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imagePoints' RECEIVED");
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
 
-    console.log("imgPnts: ");
-    console.log(imagePoints);
-    console.log("imgDet: ");
-    console.log(imageFileDetails);
-
+    // console.log("imgPnts: ");
+    // console.log(imagePoints);
+    // console.log("imgDet: ");
+    // console.log(imageFileDetails);
 
 
     formattedPoints = imagePoints;
@@ -480,6 +490,6 @@ function addToDatabase(imagePoints, imageFileDetails) {
         });
         db.run(`INSERT INTO StyrocutData (id, cutting, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}')`)
     });
-    console.log("====== function 'addToDatabase' OUTPUT END ======\n");
+    // console.log("====== function 'addToDatabase' OUTPUT END ======\n");
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -126,6 +126,18 @@ $(document).ready(function() {
         document.getElementById('imgProcessingProgress').style.visibility = "hidden";
     });
 
+    // Toggle nichrome wire heat
+    $('#toggleWireHeat').click(function() {
+        $.ajax({
+            url: '../../webMsg',
+            type: 'POST',
+            data: {'message': 'toggle wire heat'},
+            success: function(data) {
+                console.log(data);
+            }
+        });
+    });
+
     // Keep the 'eventLogsDiv' scrolled to the bottom
     $('#eventLogsDiv').bind('DOMSubtreeModified', function() {
         var eventLogsDiv = document.getElementById('eventLogsDiv');

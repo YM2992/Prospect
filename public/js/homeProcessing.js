@@ -97,10 +97,10 @@ $(document).ready(function() {
         });
     });
 
-    // Begin cutting process
-    $('#beginCutting').click(function() {
-        document.getElementById('beginCutting').style.visibility = "hidden";
-        $('#beginCutting').attr('disabled', true);
+    // Begin tracing process
+    $('#beginTracing').click(function() {
+        document.getElementById('beginTracing').style.visibility = "hidden";
+        $('#beginTracing').attr('disabled', true);
 
         if (contourIds.length > 0) {
             contourIds = `${contourIds}`
@@ -111,7 +111,7 @@ $(document).ready(function() {
         $.ajax({
             url: '../../webMsg',
             type: 'POST',
-            data: {'message': 'begin cutting', 'contourIds': contourIds},
+            data: {'message': 'begin tracing', 'contourIds': contourIds},
             success: function(data) {
                 console.log(data);
             }
@@ -122,7 +122,7 @@ $(document).ready(function() {
             processDivs[row].style.width = "0%";
         }
         document.getElementById('progressBar').style.width = "0%";
-        document.getElementById('progressBarSpan').innerHTML = "Cutting image: 0%";
+        document.getElementById('progressBarSpan').innerHTML = "tracing image: 0%";
         document.getElementById('imgProcessingProgress').style.visibility = "hidden";
     });
 
@@ -298,10 +298,10 @@ socket.on('processing', (data) => {
     }
 })
 socket.on('processed', (data) => {
-    document.getElementById('beginCutting').style.visibility = "visible";
+    document.getElementById('beginTracing').style.visibility = "visible";
 });
 
-// When the socket connection receives an event, handle the data given (progress of the image processing and cutting)
+// When the socket connection receives an event, handle the data given (progress of the image processing and tracing)
 var progressAlreadyGiven = [];
 socket.on('processing image progress', (data) => {
     setTimeout(function() {
@@ -317,10 +317,10 @@ socket.on('processing image progress', (data) => {
     }, 100);
 });
 
-socket.on('cutting progress', (data) => {
+socket.on('tracing progress', (data) => {
     alterProcessProgress(data.y);
     document.getElementById('progressBar').style.width = `${data.x + 1}%`;
-    document.getElementById('progressBarSpan').innerHTML = `Cutting image: ${data.x + 1}%`;
+    document.getElementById('progressBarSpan').innerHTML = `tracing image: ${data.x + 1}%`;
 });
 
 
@@ -345,7 +345,7 @@ socket.on('completion time', (completionDate) => {
     let formattedMins = returnedFormattedTime.formattedMins;
     let formattedSecs = returnedFormattedTime.formattedSecs;
     newEventLogs({
-        1: {'message': `Beginning cutting .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
+        1: {'message': `Beginning tracing .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
     });
 
     document.getElementById('imgProcessingProgress').style.visibility = "visible";

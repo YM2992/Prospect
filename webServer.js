@@ -41,10 +41,10 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database(dbFile);
 
 db.serialize(() => {
-    //db.exec("DROP TABLE StyrocutData");
+    //db.exec("DROP TABLE ProspectData");
     //db.exec("DROP TABLE Instructions");
 
-    db.exec("CREATE TABLE IF NOT EXISTS StyrocutData (id INTEGER PRIMARY KEY AUTOINCREMENT, cutting BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT)");
+    db.exec("CREATE TABLE IF NOT EXISTS ProspectData (id INTEGER PRIMARY KEY AUTOINCREMENT, tracing BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT)");
     db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, wireHeat BOOLEAN)")
     //db.run(`INSERT INTO Instructions (id, action, message) VALUES (NULL, '', '')`);
 
@@ -106,7 +106,7 @@ app.get('/MCActions', (req, res) => {
 });
 
 function updateMCActions(action, message, wireHeat) {
-    let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'cutting' | 'warning' | 'error' |
+    let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'tracing' | 'warning' | 'error' |
     let messageVar = message || "";
     let wireHeatVar = false;
     if (typeof wireHeat == "boolean") {
@@ -127,15 +127,15 @@ app.get('/MCInstructions', (req, res) => {
     const dataPacketId = req.query.id;
     if (!dataPacketId) {
         db.serialize(() => {
-            db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => { // Retrieves the records from the StyrocutData table in descending order of value id
+            db.all("SELECT * FROM ProspectData ORDER BY id DESC LIMIT 1", (err, rows) => { // Retrieves the records from the ProspectData table in descending order of value id
                 if (!rows[0]) {return res.send("{}")};
 
-                res.send(JSON.stringify(rows[0])); // Gets the latest record from the StyrocutData table
+                res.send(JSON.stringify(rows[0])); // Gets the latest record from the ProspectData table
             });
         });
     } else {
         db.serialize(() => {
-            db.all("SELECT * FROM StyrocutData ORDER BY id DESC LIMIT 1", (err, rows) => {
+            db.all("SELECT * FROM ProspectData ORDER BY id DESC LIMIT 1", (err, rows) => {
                 let response = "";
 
                 if (!rows[0]) {return res.send("{}")};
@@ -144,7 +144,7 @@ app.get('/MCInstructions', (req, res) => {
                 const fPointsLength = formattedPoints.length;
 
                 if (dataPacketId >= fPointsLength) {
-                    return res.send("error");
+                    return res.send(`final dataPacketId was ${fPointsLength - 1}`);
                 }
 
                 response = formattedPoints[dataPacketId];
@@ -160,7 +160,7 @@ app.get('/MCInstructions', (req, res) => {
 app.get('/MCInstructionsList', (req, res) => {
     let formattedResponse = ``;
     db.serialize(() => {
-        db.all("SELECT * FROM StyrocutData", (err, rows) => { // Retrieves all records from the StyrocutTable data
+        db.all("SELECT * FROM ProspectData", (err, rows) => { // Retrieves all records from the ProspectTable data
             rows.forEach(row => {
                 formattedResponse += `${JSON.stringify(row)}<br>`;
             });
@@ -185,7 +185,7 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
     console.log(`req.body.message: ${req.body.message}`);
     console.log(`req.body.contourIds: ${req.body.contourIds}`);
     switch (req.body.message) {
-        case 'begin cutting':
+        case 'begin tracing':
             if (req.body.contourIds.length <= 0) {
                 return io.emit('event', {1: {'message': `ERROR | 1 or more contours/image outlines must be selected`, 'colour': '235, 0, 0'}});
             }
@@ -212,7 +212,7 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             io.emit('completion time', (currentDate + shadedPixelCount));
 
             addToDatabase(imagePoints, storedFile);
-            updateMCActions('cutting', null, true);
+            updateMCActions('tracing', null, true);
             break;
 
         case 'toggle wire heat':
@@ -485,10 +485,10 @@ function addToDatabase(imagePoints, imageFileDetails) {
     formattedPoints = JSON.stringify(formattedPoints);
 
     db.serialize(() => {
-        db.each(`SELECT * FROM StyrocutData WHERE cutting='1'`, (error, row) => {
-            db.run(`UPDATE StyrocutData SET cutting=0 WHERE id='${row.id}'`)
+        db.each(`SELECT * FROM ProspectData WHERE tracing='1'`, (error, row) => {
+            db.run(`UPDATE ProspectData SET tracing=0 WHERE id='${row.id}'`)
         });
-        db.run(`INSERT INTO StyrocutData (id, cutting, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}')`)
+        db.run(`INSERT INTO ProspectData (id, tracing, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}')`)
     });
     // console.log("====== function 'addToDatabase' OUTPUT END ======\n");
 }

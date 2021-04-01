@@ -14,11 +14,9 @@
         <link rel="icon" href="/assets/Prospect-logos/icon.ico">
         <div id="formDiv">
             <form id="uploadForm">
-                <label for="fileInput">Upload a <b>100x100 pixel PNG image</b> to initiate the processing step.</label><br><br>
-                <input class="formButton" type="file" accept="image/png" name="uploadedImage" id="fileInput" size="n" onchange="getOutput()"/>
-                <input class="formButton" type="submit" id="submitImage"/>
-            </form>
-            <div id="imgPreviewDiv">
+                <label for="fileInput">Upload a <b>PNG image</b> <i>(no bigger than 620x620 pixels)</i>, select a tracing method and click submit to begin processing.</label><br><br>
+                <input class="formButton" type="file" accept="image/png" name="uploadedImage" id="fileInput" size="n" onchange="getOutput()"/>            </form>
+            <div id="workspaceDiv">
                 <img id="previewImg">
                 <div id="imgProcessingProgress">
                     <div id="progressBar" class="progressBar"></div>
@@ -38,7 +36,26 @@
                 </div>-->
             </div>
             <div id="actionButtonsDiv">
-                <input type="image" src="" alt="Toggle wire heat" title="Toggle wire heat" id="toggleWireHeat">
+                <input type="radio" name="traceMethod" id="traceAll" value="traceAll" checked>
+                <label for="traceAll">Trace all (e.g. drawings)</label><br>
+                <input type="radio" name="traceMethod" id="traceOutlines" value="traceOutlines">
+                <label for="traceOutlines">Trace outline/s (e.g. PCBs)</label><br>
+                <input class="formButton" type="submit" id="submitImage"/>
+
+                <br>
+
+                <input type="checkbox" name="spindleRotation" id="spindleRotation">
+                <label for="spindleRotation">Enable spindle rotation during tracing <b>(required when drilling/etching)</b></label><br>
+                <br><br>
+
+                <button class="translateSpindle" id="translateSpindleUp">^</button>
+                <button class="setSpindle" id="setUpPosition">Set 'up' position</button>
+                <br>
+                <button class="translateSpindle" id="translateSpindleDown">v</button>
+                <button class="setSpindle" id="setDownPosition">Set 'down' position</button>
+
+                <br><br>
+                
                 <input type="image" src="/assets/Play_Button.png" alt="Begin tracing" title="Begin tracing" id="beginTracing"/>
             </div>
             <div id="eventLogsDivTitleBar">

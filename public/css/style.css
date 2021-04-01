@@ -20,20 +20,16 @@ header img {
 
 
 /* Uploaded image preview */
-#imgPreviewDiv {
+#workspaceDiv {
     position: absolute;
-    top: 135px;
-    left: 75px;
-    height: 500px;
-    width: 500px;
+    top: 55px;
+    left: 10px;
+    height: 620px;
+    width: 620px;
     border: 1px solid black;
     background-color: rgb(250, 248, 241);
 }
 
-#previewImg {
-    height: 100%;
-    width: 100%;
-}
 
 #contoursDiv {
     position: absolute;
@@ -45,8 +41,8 @@ header img {
 .contourPxl {
     padding: 0 !important;
     position: absolute;
-    height: 1%;
-    width: 1%;
+    height: 1px;
+    width: 1px;
     color: red;
     background-color: red;
     border: none;
@@ -80,14 +76,18 @@ header img {
 }
 
 #imgProcessingProgress {
+    position: absolute;
+    top: 625px;
     height: 25px;
-    width: 500px;
+    width: 310px;
     background-color: white;
     border-radius: 10px;
     visibility: hidden;
 }
 
 #imgProcessingProgress span {
+    position: absolute;
+    top: 3px;
     display: block;
     width: 100%;
     text-align: center;
@@ -101,6 +101,10 @@ header img {
 }
 
 #timeLeftSpan {
+    position: absolute;
+    top: -2px !important;
+    left: 320px;
+    z-index: 0;
     visibility: hidden;
 }
 
@@ -108,15 +112,8 @@ header img {
 /* Form */
 #fileInput {
     position: absolute;
-    left: 75px;
-    top: 110px;
-}
-
-#submitImage {
-    position: absolute;
-    left: 520px;
-    top: 110px;
-    visibility: hidden;
+    left: 10px;
+    top: 30px;
 }
 
 #formDiv {
@@ -144,10 +141,10 @@ header img {
 /* Action buttons */
 #actionButtonsDiv {
     height: 450px;
-    width: 175px;
+    width: 275px;
     position: absolute;
     top: 160px;
-    left: 700px;
+    left: 675px;
 }
 
 
@@ -159,6 +156,21 @@ header img {
     visibility: hidden;
 }
 
+#submitImage {
+    margin-top: 10px;
+    margin-bottom: 30px;
+    margin-left: 100px;
+    visibility: hidden;
+}
+
+.translateSpindle {
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+.setSpindle {
+    margin-left: 60px;
+}
 
 #beginTracing {
     height: 100px;

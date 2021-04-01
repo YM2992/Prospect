@@ -3,6 +3,12 @@
 const HostIP = '192.168.137.1';
 var contourIds = [];
 
+var submittedFile = null;
+var submittedFileDetails = {
+    height: 0,
+    width: 0
+};
+
 
 /* Event logs */
 function newEventLogs(messages) {
@@ -69,18 +75,39 @@ $(document).ready(function() {
     $('#submitImage').click(function(e) {
         e.preventDefault();
 
-        let file = document.getElementById('fileInput').files[0];
-        if (!file) {
+        submittedFile = document.getElementById('fileInput').files[0];
+        if (!submittedFile) {
             newEventLogs({1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
             document.getElementById('submitImage').style.visibility = "hidden";
             return;
         }
 
+        // Get image details: file type, image height, image width
+
+        var reader = new FileReader();
+        reader.onload = function(m) {
+            var img = new Image();
+            img.src = m.target.result;
+            img.onload = function() {
+                submittedFileDetails.height = this.height;
+                submittedFileDetails.width = this.width;
+            }
+        }
+        reader.readAsDataURL(submittedFile);
+
         document.getElementById('fileInput').disabled = true;
         document.getElementById('submitImage').disabled = true;
+
+        let selectedTraceMethod;
+        document.getElementsByName('traceMethod').forEach((radBtn) => {
+            if (radBtn.checked) {
+                selectedTraceMethod = radBtn.value;
+            }
+        });
         
         let formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', submittedFile);
+        formData.append('traceMethod', selectedTraceMethod);
 
         $.ajax({
             url: '../../upload',
@@ -127,7 +154,7 @@ $(document).ready(function() {
     });
 
     // Toggle nichrome wire heat
-    $('#toggleWireHeat').click(function() {
+    /*$('#toggleWireHeat').click(function() {
         $.ajax({
             url: '../../webMsg',
             type: 'POST',
@@ -136,7 +163,7 @@ $(document).ready(function() {
                 console.log(data);
             }
         });
-    });
+    });*/
 
     // Keep the 'eventLogsDiv' scrolled to the bottom
     $('#eventLogsDiv').bind('DOMSubtreeModified', function() {
@@ -201,7 +228,8 @@ function toggleContour(newContourPixel) {
     if (newContourPixel.classList.value.includes('contourId')) {
         // improve efficiency by using newContourPixel.classList.contains()
         const classValues = newContourPixel.classList.value;
-        const contourId = classValues.charAt(classValues.indexOf('contourId') + 9);
+        //const contourId = classValues.charAt(classValues.indexOf('contourId') + 9);
+        const contourId = (classValues.match(/\d/g)).join("");
         const contourClassName = `contourId${contourId}`;
         const contourGroupElements = document.getElementsByClassName(contourClassName);
 
@@ -238,8 +266,8 @@ function addContourOnImage(contourId, x, y) {
     newContourPixel.classList.add(`contourId${contourId}`);
     newContourPixel.classList.add('contourEnabled');
     contoursElement.appendChild(newContourPixel);
-    newContourPixel.style.left = `${x * 5}px`;
-    newContourPixel.style.top = `${y * 5}px`;
+    newContourPixel.style.left = `${x}px`;
+    newContourPixel.style.top = `${y}px`;
 
     const idInArray = contourIds.indexOf(`${contourId}`);
     if (idInArray <= -1) {
@@ -257,6 +285,9 @@ function alterProcessProgress(row) {
     if (row >= 100) return true;
     let processDivs = document.getElementsByClassName('processDiv');
     let processDiv = processDivs[row];
+
+    if (!processDiv) return false;
+
     if ((parseFloat(processDiv.style.width) || 0) < 100) {
         processDiv.style.height = '1%';
         processDiv.style.width = `${(parseFloat(processDiv.style.width) || 0) + 1}%`;
@@ -264,7 +295,7 @@ function alterProcessProgress(row) {
     }
 }
 
-function incremenetProcessProgress() {
+function incrementProcessProgress() {
     const complete = alterProcessProgress(parseInt(`${processingProgress / 100}`));
     if (complete) return true;
 }
@@ -304,23 +335,35 @@ socket.on('processed', (data) => {
 // When the socket connection receives an event, handle the data given (progress of the image processing and tracing)
 var progressAlreadyGiven = [];
 socket.on('processing image progress', (data) => {
-    setTimeout(function() {
-        alterProcessProgress(data.y);
-        document.getElementById('progressBar').style.width = `${data.x + 1}%`;
-        document.getElementById('progressBarSpan').innerHTML = `Processing image: ${data.x + 1}%`;
-        if (!progressAlreadyGiven.includes(data.x + 1)) {
-            progressAlreadyGiven.push(data.x + 1);
-            newEventLogs({
-                1: {'message': `Processing image .. ${data.x + 1}% complete`}
-            });
-        }
-    }, 100);
+    if (data.y) {
+        let processProgressRepetition = setInterval(() => {
+            if (data.y >= submittedFileDetails.width) {
+                clearInterval(processProgressRepetition);
+            }
+            alterProcessProgress(data.y - 1);
+            alterProcessProgress(data.y);
+        }, 40);
+    }
+    
+    if (data.x) {
+        setTimeout(function() {
+            const xAsPercentage = parseInt(data.x/submittedFileDetails.height * 100) + 1;
+            document.getElementById('progressBar').style.width = `${xAsPercentage}%`;
+            document.getElementById('progressBarSpan').innerHTML = `Processing image: ${xAsPercentage}%`;
+            if (!progressAlreadyGiven.includes(xAsPercentage)) {
+                progressAlreadyGiven.push(xAsPercentage);
+                newEventLogs({
+                    1: {'message': `Processing image .. ${xAsPercentage}% complete`}
+                });
+            }
+        }, 100);
+    }
 });
 
 socket.on('tracing progress', (data) => {
     alterProcessProgress(data.y);
-    document.getElementById('progressBar').style.width = `${data.x + 1}%`;
-    document.getElementById('progressBarSpan').innerHTML = `tracing image: ${data.x + 1}%`;
+    document.getElementById('progressBar').style.width = `${data.y + 1}%`;
+    document.getElementById('progressBarSpan').innerHTML = `tracing image: ${data.y + 1}%`;
 });
 
 

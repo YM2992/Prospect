@@ -249,9 +249,10 @@ let upload = multer({ dest: 'ProcessingImages/', storage: storage});
 
 app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST request
     //console.log(req.file);
+    //console.log(req.body.traceMethod);
+    
     res.send("success");
-    storedFile = req.file;
-    processImage(req.file); // Call the processImage function to process the image into data suitable for the microcontroller
+    processImage(req.file, req.body.traceMethod); // Call the processImage function to process the image into data suitable for the microcontroller
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -276,6 +277,7 @@ const orderRecentFiles = (dir) => {
 
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
 const { debug } = require('console');
+const { traceDeprecation } = require('process');
 
 
 
@@ -383,10 +385,15 @@ function getImageContours(image) {
     return individualContours;
 }
 
-function processImage(imageFileDetails) {
+function processImage(imageFileDetails, tracingMethod) {
     // console.log("\n====== function 'processImage' OUTPUT START ======");
     if (!imageFileDetails) {
-        io.emit('event', {1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
+        io.emit('event', {1: {'message': "ERROR | No file selected for upload. Please refresh the page and try again.", 'colour': '235, 0, 0'}});
+        return;
+    }
+    
+    if (tracingMethod != "traceAll" && tracingMethod != "traceOutlines") {
+        io.emit('event', {1: {'message': `ERROR | Invalid tracing method detected. *${tracingMethod}* does not exist. Please refresh the page and try again.`, 'colour': '235, 0, 0'}});
         return;
     }
 
@@ -399,7 +406,7 @@ function processImage(imageFileDetails) {
     //console.log(image);
 
     // Ensure the image is the valid size (100 by 100 pixels)
-    if (image.rows != 100 || image.cols != 100) {
+    if (image.rows > 620 || image.cols > 620) {
         io.emit('failed submission');
         io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${image.rows}x${image.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
         console.warn("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
@@ -408,11 +415,11 @@ function processImage(imageFileDetails) {
 
     updateMCActions('processing');
 
-    for (let x = 0; x < image.rows; x++) { // Loop through each row of pixels in the image
-        for (let y = 0; y < image.cols; y++) { // Loop through every column of pixels in the image
+    for (let y = 0; y < image.cols; y++) { // Loop through every column of pixels in the image
+        io.emit('processing image progress', {y: y});
+        for (let x = 0; x < image.rows; x++) { // Loop through each row of pixels in the image
             // The above iterations result in the looping through of every pixel present in the image
-            io.emit('processing image progress', {x: x, y: y});
-
+            io.emit('processing image progress', {x: x});
             totalPixelCount++ // Increment totalPixelCount
 
 
@@ -443,7 +450,7 @@ function processImage(imageFileDetails) {
         contoursAmount++;
     }
 
-    setTimeout(function(){
+    setTimeout(function() {
         io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
         io.emit('processed', {'objectNumber': contoursAmount});
         updateMCActions('processed', "begin taking data");

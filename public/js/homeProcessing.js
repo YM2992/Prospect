@@ -70,6 +70,17 @@ $(document).ready(function() {
         event.preventDefault();
     });*/
 
+    $('#changeSizeHeight').change(function(e) {
+        if (!this.value) return
+
+        if (this.value < 0) {
+            this.value = '0';
+        } else if (this.value > 310) {
+            this.value = '310';
+        }
+
+        
+    });
 
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e) {
@@ -81,19 +92,6 @@ $(document).ready(function() {
             document.getElementById('submitImage').style.visibility = "hidden";
             return;
         }
-
-        // Get image details: file type, image height, image width
-
-        var reader = new FileReader();
-        reader.onload = function(m) {
-            var img = new Image();
-            img.src = m.target.result;
-            img.onload = function() {
-                submittedFileDetails.height = this.height;
-                submittedFileDetails.width = this.width;
-            }
-        }
-        reader.readAsDataURL(submittedFile);
 
         document.getElementById('fileInput').disabled = true;
         document.getElementById('submitImage').disabled = true;
@@ -186,7 +184,7 @@ function getFile(filePath) {
 }
 
 function getOutput() {
-    let imageFile = document.getElementById('fileInput').files[0];
+    const imageFile = document.getElementById('fileInput').files[0];
 
     if (!imageFile) {
         console.warn("No image received.");
@@ -207,6 +205,23 @@ function getOutput() {
         return;
     };
 
+    // Get image details: file type, image height, image width
+    var reader = new FileReader();
+    reader.onload = function(m) {
+        var img = new Image();
+        img.src = m.target.result;
+        img.onload = function() {
+            submittedFileDetails.height = this.height;
+            submittedFileDetails.width = this.width;
+        }
+    }
+    reader.readAsDataURL(imageFile);
+    
+    setTimeout(() => {
+        document.getElementById('changeSizeHeight').value = submittedFileDetails.height / 2;
+        document.getElementById('changeSizeWidth').value = submittedFileDetails.width / 2;
+    }, 10);
+    
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
 
     document.getElementById('submitImage').style.visibility = "visible";

@@ -316,7 +316,6 @@ const { traceDeprecation } = require('process');
 /////////////////////
 
 
-
 function getImageContours(image) {
     const grayImage = image.bgrToGray();
     const threshold = grayImage.threshold(230, 255, cv.THRESH_BINARY);
@@ -391,7 +390,7 @@ function processImage(imageFileDetails, tracingMethod) {
         io.emit('event', {1: {'message': "ERROR | No file selected for upload. Please refresh the page and try again.", 'colour': '235, 0, 0'}});
         return;
     }
-    
+
     if (tracingMethod != "traceAll" && tracingMethod != "traceOutlines") {
         io.emit('event', {1: {'message': `ERROR | Invalid tracing method detected. *${tracingMethod}* does not exist. Please refresh the page and try again.`, 'colour': '235, 0, 0'}});
         return;

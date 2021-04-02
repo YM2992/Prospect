@@ -28,6 +28,7 @@ header img {
     width: 620px;
     border: 1px solid black;
     background-color: rgb(250, 248, 241);
+    background-image: url('../assets/Image_Preview_Grid_Watermark.png');
 }
 
 

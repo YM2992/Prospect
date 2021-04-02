@@ -31,6 +31,10 @@ header img {
     background-image: url('../assets/Image_Preview_Grid_Watermark.png');
 }
 
+#previewImg {
+    object-fit: contain;
+}
+
 
 #contoursDiv {
     position: absolute;
@@ -168,7 +172,6 @@ header img {
     padding-left: 30px;
     padding-right: 30px;
 }
-
 .setSpindle {
     margin-left: 60px;
 }
@@ -177,6 +180,22 @@ header img {
     height: 100px;
     width: 100px;
     visibility: hidden;
+}
+
+#changeSizeLbl {
+    position: absolute;
+    left: 0px;
+    top: -60px;
+}
+#changeSizeHeight {
+    position: absolute;
+    left: 45px;
+    top: -42px;
+}
+#changeSizeWidth {
+    position: absolute;
+    left: 120px;
+    top: -42px;
 }
 
 

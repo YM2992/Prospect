@@ -14,7 +14,7 @@
         <link rel="icon" href="/assets/Prospect-logos/icon.ico">
         <div id="formDiv">
             <form id="uploadForm">
-                <label for="fileInput">Upload a <b>PNG image</b> <i>(no bigger than 620x620 pixels)</i>, select a tracing method and click submit to begin processing.</label><br><br>
+                <label for="fileInput">Upload a <b>PNG image</b>, select a tracing method and click submit to begin processing.</label><br><br>
                 <input class="formButton" type="file" accept="image/png" name="uploadedImage" id="fileInput" size="n" onchange="getOutput()"/>
             </form>
             <div id="workspaceDiv" title="All measurements labelled on the grid are in millimetres (mm).">
@@ -37,9 +37,9 @@
                 </div>-->
             </div>
             <div id="actionButtonsDiv">
-                <label for="changeSizeHeight" id="changeSizeLbl">Enter the dimensions of your material (mm):</label>
-                <input type="number" id="changeSizeHeight" min="0" max="310" placeholder="height" title="height">
-                <input type="number" id="changeSizeWidth" min="0" max="310" placeholder="width" title="width">
+                <label for="" id="changeSizeLbl">Enter the dimensions of your material (mm):</label>
+                <input type="number" id="changeSizeHeight" min="50" max="310" placeholder="height" title="Height of material. (>0 AND <310mm)">
+                <input type="number" id="changeSizeWidth" min="50" max="310" placeholder="width" title="Width of material. (>0 AND <310mm)">
 
                 <input type="radio" name="traceMethod" id="traceAll" value="traceAll" checked>
                 <label for="traceAll">Trace all (e.g. drawings)</label><br>

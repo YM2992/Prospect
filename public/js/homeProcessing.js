@@ -55,6 +55,65 @@ function fileDropDivDragDrop(ev) {
     console.log(ev.dataTransfer)
 }
 
+
+// Fit previewImg to container
+function constrainImg(reqH, reqW) {
+    if (!submittedFileDetails.height || !submittedFileDetails.width) return false;
+    
+    const imgAspectRatio = submittedFileDetails.height / submittedFileDetails.width;
+
+    if (reqH) {
+        reqH = parseInt(reqH);
+        //document.getElementById('changeSizeHeight').value = `${(reqH * 2).toFixed(2)}`;
+
+        const newWidth = (reqH / imgAspectRatio);
+        console.log('newWidth', newWidth)
+
+        if (newWidth >= 50 && newWidth <= 310) {
+            document.getElementById('previewImg').style.height = `${reqH * 2}px`;
+            document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
+            document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
+            document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
+        } else if (newWidth < 50) {
+            document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
+            document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
+            document.getElementById('changeSizeHeight').value = `${50}`;
+            document.getElementById('changeSizeWidth').value = `${(50 / imgAspectRatio).toFixed(2)}`;
+        } else if (newWidth > 310) {
+            document.getElementById('previewImg').style.height = `${620 * imgAspectRatio}px`;
+            document.getElementById('previewImg').style.width = `${620 / imgAspectRatio}px`;
+            if (newWidth < reqH) {
+                document.getElementById('changeSizeHeight').value = `${310}`;
+            } else {
+                document.getElementById('changeSizeWidth').value = `${310}`;
+            }
+            document.getElementById('changeSizeWidth').value = `${(620 / imgAspectRatio).toFixed(2)}`;
+        }
+    }
+
+    if (reqW) {
+        reqW = parseInt(reqW);
+        document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
+
+        const newHeight = (reqW * imgAspectRatio);
+        
+        if (newHeight >= 50 && newHeight <= 310) {
+            document.getElementById('previewImg').style.width = `${reqW * 2}px`;
+            document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
+            document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
+        } /*else if (newHeight < 50) {
+            console.log('minimal');
+            document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
+            document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
+            document.getElementById('changeSizeHeight').value = `${(50 * imgAspectRatio).toFixed(2)}`;
+        } else if (newHeight > 310) {
+            document.getElementById('previewImg').style.width = `${(620 / imgAspectRatio)}px`;
+            document.getElementById('previewImg').style.height = `${(620 * imgAspectRatio)}px`;
+            document.getElementById('changeSizeHeight').value = `${(310 * imgAspectRatio).toFixed(2)}`;
+        }*/
+    }
+}
+
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
     // Drag and drop file input
@@ -72,15 +131,26 @@ $(document).ready(function() {
 
     $('#changeSizeHeight').change(function(e) {
         if (!this.value) return
-
-        if (this.value < 0) {
-            this.value = '0';
+        if (this.value < 50) {
+            this.value = 50;
         } else if (this.value > 310) {
-            this.value = '310';
+            this.value = 310;
         }
 
-        
+        constrainImg(this.value, null);
     });
+
+    $('#changeSizeWidth').change(function(e) {
+        if (!this.value) return
+        if (this.value < 50) {
+            this.value = 50;
+        } else if (this.value > 310) {
+            this.value = 310;
+        }
+
+        constrainImg(null, this.value);
+    });
+
 
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e) {
@@ -211,6 +281,11 @@ function getOutput() {
         var img = new Image();
         img.src = m.target.result;
         img.onload = function() {
+            /*if (this.height > 620 || this.width > 620) {
+                newEventLogs({1: {'message': "ERROR | File too large (must be 620x620 pixels).", 'colour': '235, 0, 0'}});
+                return;
+            }*/
+
             submittedFileDetails.height = this.height;
             submittedFileDetails.width = this.width;
         }
@@ -218,9 +293,8 @@ function getOutput() {
     reader.readAsDataURL(imageFile);
     
     setTimeout(() => {
-        document.getElementById('changeSizeHeight').value = submittedFileDetails.height / 2;
-        document.getElementById('changeSizeWidth').value = submittedFileDetails.width / 2;
-    }, 10);
+        constrainImg(submittedFileDetails.height / 2, null);
+    }, 100);
     
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
 
@@ -367,9 +441,6 @@ socket.on('processing image progress', (data) => {
             document.getElementById('progressBarSpan').innerHTML = `Processing image: ${xAsPercentage}%`;
             if (!progressAlreadyGiven.includes(xAsPercentage)) {
                 progressAlreadyGiven.push(xAsPercentage);
-                newEventLogs({
-                    1: {'message': `Processing image .. ${xAsPercentage}% complete`}
-                });
             }
         }, 100);
     }

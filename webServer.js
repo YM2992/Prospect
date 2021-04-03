@@ -405,12 +405,12 @@ function processImage(imageFileDetails, tracingMethod) {
     //console.log(image);
 
     // Ensure the image is the valid size (100 by 100 pixels)
-    if (image.rows > 620 || image.cols > 620) {
+    /*if (image.rows > 620 || image.cols > 620) {
         io.emit('failed submission');
         io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${image.rows}x${image.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
         console.warn("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
         return;
-    }
+    }*/
 
     updateMCActions('processing');
 

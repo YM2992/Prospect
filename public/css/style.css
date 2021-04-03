@@ -33,6 +33,10 @@ header img {
 
 #previewImg {
     object-fit: contain;
+    min-height: 100px;
+    max-height: 620px;
+    min-width: 100px;
+    max-width: 620px;
 }
 
 

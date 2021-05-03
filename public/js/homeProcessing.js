@@ -152,13 +152,28 @@ $(document).ready(function() {
     });
 
 
+    // Set spindle positions
     function translateSpindle(direction) {
-        if (direction == 1) {
-            UP
-        } else if (direction == -1) {
-            DOWN
+        if (direction > 0) {
+            console.log("translate up")
+        } else if (direction < 0) {
+            console.log("translate down")
         }
     }
+
+    function setSpindlePos(pos) {
+        if (pos > 0) {
+            console.log("set up")
+        } else if (pos < 0) {
+            console.log("set down")
+        }
+    }
+
+    $('#translateSpindleUp').click(function(){translateSpindle(1)});
+    $('#translateSpindleDown').click(function(){translateSpindle(-1)});
+    $('#setUpPosition').click(function(){setSpindlePos(1)});
+    $('#setDownPosition').click(function(){setSpindlePos(-1)});
+    
 
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e) {

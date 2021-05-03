@@ -152,6 +152,14 @@ $(document).ready(function() {
     });
 
 
+    function translateSpindle(direction) {
+        if (direction == 1) {
+            UP
+        } else if (direction == -1) {
+            DOWN
+        }
+    }
+
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e) {
         e.preventDefault();
@@ -172,10 +180,13 @@ $(document).ready(function() {
                 selectedTraceMethod = radBtn.value;
             }
         });
-        
+
+        let spindleRotation = document.getElementById('spindleRotation').checked;
+
         let formData = new FormData();
         formData.append('file', submittedFile);
         formData.append('traceMethod', selectedTraceMethod);
+        formData.append('spindleRotation', spindleRotation);
 
         $.ajax({
             url: '../../upload',
@@ -438,7 +449,7 @@ socket.on('processing image progress', (data) => {
         setTimeout(function() {
             const xAsPercentage = parseInt(data.x/submittedFileDetails.height * 100) + 1;
             document.getElementById('progressBar').style.width = `${xAsPercentage}%`;
-            document.getElementById('progressBarSpan').innerHTML = `Processing image: ${xAsPercentage}%`;
+            document.getElementById('progressBarSpan').innerHTML = `Processing image`;
             if (!progressAlreadyGiven.includes(xAsPercentage)) {
                 progressAlreadyGiven.push(xAsPercentage);
             }

@@ -252,7 +252,7 @@ app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST re
     //console.log(req.body.traceMethod);
     
     res.send("success");
-    processImage(req.file, req.body.traceMethod); // Call the processImage function to process the image into data suitable for the microcontroller
+    processImage(req.file, req.body.traceMethod, req.body.spindleRotation); // Call the processImage function to process the image into data suitable for the microcontroller
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -278,6 +278,7 @@ const orderRecentFiles = (dir) => {
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
 const { debug } = require('console');
 const { traceDeprecation } = require('process');
+const { THRESH_MASK } = require('opencv4nodejs');
 
 
 
@@ -315,6 +316,29 @@ const { traceDeprecation } = require('process');
 
 /////////////////////
 
+function getAllImagePoints(image) {
+    const grayImage = image.bgrToGray();
+    let threshold = grayImage.threshold(230, 255, cv.THRESH_BINARY);
+    //theshold = cv.imwrite('./ProcessingImages/thresoldSaveTest.png', threshold);
+    console.log(threshold);
+
+    let imagePoints = [];
+    
+
+    for (let y = 0; y < threshold.cols; y++) {
+        io.emit('processing image progress', {y: y});
+        for (let x = 0; x < threshold.rows; x++) {
+            const [b, g, r] = threshold.atRaw(x, y);
+            if (r <= 50 && g <= 50 && b <= 50) {
+                imagePoints.push([x, y]);
+            }
+
+        }
+    }
+
+    io.emit('processing', {'contourId': 0, 'points': imagePoints});
+    return imagePoints;
+}
 
 function getImageContours(image) {
     const grayImage = image.bgrToGray();
@@ -384,7 +408,7 @@ function getImageContours(image) {
     return individualContours;
 }
 
-function processImage(imageFileDetails, tracingMethod) {
+function processImage(imageFileDetails, tracingMethod, spindleRotation) {
     // console.log("\n====== function 'processImage' OUTPUT START ======");
     if (!imageFileDetails) {
         io.emit('event', {1: {'message': "ERROR | No file selected for upload. Please refresh the page and try again.", 'colour': '235, 0, 0'}});
@@ -402,7 +426,7 @@ function processImage(imageFileDetails, tracingMethod) {
     shadedPixelCount = 0; // Reset shadedPixelCount back to 0 to prevent miscalculations/errors
 
     const image = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
-    //console.log(image);
+    // console.log('image', image);
 
     // Ensure the image is the valid size (100 by 100 pixels)
     /*if (image.rows > 620 || image.cols > 620) {
@@ -438,22 +462,27 @@ function processImage(imageFileDetails, tracingMethod) {
     console.log(`Shaded pixels: ${shadedPixelCount}`);
     //console.log(imagePoints);
 
-    let imageContours = getImageContours(image);
-    let contoursAmount = 0;
-    for (i in imageContours) {
-        for (v in imageContours[i]) {
-            //console.log(imageContours[i][v]);
-            const fixedXY = [imageContours[i][v].x, imageContours[i][v].y];
-            imagePoints.push(fixedXY);
+    if (tracingMethod == "traceAll") {
+        imagePoints = getAllImagePoints(image);
+        console.log('traceAll imagePoints')
+    } else if (tracingMethod == "traceOutlines") {
+        let imageContours = getImageContours(image);
+        let contoursAmount = 0;
+        for (i in imageContours) {
+            for (v in imageContours[i]) {
+                //console.log(imageContours[i][v]);
+                const fixedXY = [imageContours[i][v].x, imageContours[i][v].y];
+                imagePoints.push(fixedXY);
+            }
+            contoursAmount++;
         }
-        contoursAmount++;
-    }
 
-    setTimeout(function() {
-        io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
-        io.emit('processed', {'objectNumber': contoursAmount});
-        updateMCActions('processed', "begin taking data");
-    }, 3000);
+        setTimeout(function() {
+            io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
+            io.emit('processed', {'objectNumber': contoursAmount});
+            updateMCActions('processed', "begin taking data");
+        }, 3000);
+    }
 
     // console.log("====== function 'processImage' OUTPUT END ======\n");
     return addToDatabase(imagePoints, imageFileDetails);

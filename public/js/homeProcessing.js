@@ -60,58 +60,112 @@ function fileDropDivDragDrop(ev) {
 function constrainImg(reqH, reqW) {
     if (!submittedFileDetails.height || !submittedFileDetails.width) return false;
     
-    const imgAspectRatio = submittedFileDetails.height / submittedFileDetails.width;
-
+    console.log(reqH, reqW);
+    
     if (reqH) {
-        reqH = parseInt(reqH);
-        //document.getElementById('changeSizeHeight').value = `${(reqH * 2).toFixed(2)}`;
-
-        const newWidth = (reqH / imgAspectRatio);
-        console.log('newWidth', newWidth)
-
-        if (newWidth >= 50 && newWidth <= 310) {
-            document.getElementById('previewImg').style.height = `${reqH * 2}px`;
-            document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
-            document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
-            document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
-        } else if (newWidth < 50) {
-            document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
-            document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
-            document.getElementById('changeSizeHeight').value = `${50}`;
-            document.getElementById('changeSizeWidth').value = `${(50 / imgAspectRatio).toFixed(2)}`;
-        } else if (newWidth > 310) {
-            document.getElementById('previewImg').style.height = `${620 * imgAspectRatio}px`;
-            document.getElementById('previewImg').style.width = `${620 / imgAspectRatio}px`;
-            if (newWidth < reqH) {
-                document.getElementById('changeSizeHeight').value = `${310}`;
-            } else {
-                document.getElementById('changeSizeWidth').value = `${310}`;
-            }
-            document.getElementById('changeSizeWidth').value = `${(620 / imgAspectRatio).toFixed(2)}`;
-        }
+        reqH = parseFloat(reqH);
     }
-
     if (reqW) {
-        reqW = parseInt(reqW);
-        document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
-
-        const newHeight = (reqW * imgAspectRatio);
-        
-        if (newHeight >= 50 && newHeight <= 310) {
-            document.getElementById('previewImg').style.width = `${reqW * 2}px`;
-            document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
-            document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
-        } /*else if (newHeight < 50) {
-            console.log('minimal');
-            document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
-            document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
-            document.getElementById('changeSizeHeight').value = `${(50 * imgAspectRatio).toFixed(2)}`;
-        } else if (newHeight > 310) {
-            document.getElementById('previewImg').style.width = `${(620 / imgAspectRatio)}px`;
-            document.getElementById('previewImg').style.height = `${(620 * imgAspectRatio)}px`;
-            document.getElementById('changeSizeHeight').value = `${(310 * imgAspectRatio).toFixed(2)}`;
-        }*/
+        reqW = parseFloat(reqW);
     }
+
+    const imgAspectRatio = submittedFileDetails.height / submittedFileDetails.width;
+    console.log('imgAspectRatio: ', imgAspectRatio);
+
+    if (imgAspectRatio == 1) {
+        let req = reqH || reqW;
+        document.getElementById('previewImg').style.height = `${req * 2}px`;
+        document.getElementById('previewImg').style.width = `${document.getElementById('previewImg').style.width}`;
+        document.getElementById('changeSizeHeight').value = `${req.toFixed(2)}`;
+        document.getElementById('changeSizeWidth').value = `${document.getElementById('changeSizeHeight').value}`;
+    } else if (imgAspectRatio < 1) { // Width is greater than height
+        if (reqH) {
+            const newWidth = (reqH / imgAspectRatio);
+            console.log('newWidth: ', newWidth)
+
+            if (newWidth >= 50 && newWidth <= 310) {
+                document.getElementById('previewImg').style.height = `${reqH * 2}px`;
+                document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
+                document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
+            } else if (newWidth < 50) {
+                document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${50}`;
+                document.getElementById('changeSizeWidth').value = `${(50 / imgAspectRatio).toFixed(2)}`;
+            } else if (newWidth > 310) {
+                document.getElementById('previewImg').style.height = `${620 * imgAspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${620 / imgAspectRatio}px`;
+                if (newWidth < reqH) {
+                    document.getElementById('changeSizeHeight').value = `${310}`;
+                } else {
+                    document.getElementById('changeSizeWidth').value = `${310}`;
+                }
+                document.getElementById('changeSizeWidth').value = `${(620 / imgAspectRatio).toFixed(2)}`;
+            }
+        } else if (reqW) {
+            const newHeight = (reqW / imgAspectRatio);
+            console.log('newHeight: ', newHeight)
+
+            
+        }
+    } else if (imgAspectRatio > 1) { // Height is greater than width
+        document.getElementById('previewImg').style.height = `${req * 2}px`;
+        document.getElementById('previewImg').style.width = `${document.getElementById('previewImg').style.width}`;
+        document.getElementById('changeSizeHeight').value = `${req.toFixed(2)}`;
+        document.getElementById('changeSizeWidth').value = `${document.getElementById('changeSizeHeight').value}`;
+    }
+
+    // if (reqH) {
+    //     reqH = parseInt(reqH);
+    //     //document.getElementById('changeSizeHeight').value = `${(reqH * 2).toFixed(2)}`;
+
+    //     const newWidth = (reqH / imgAspectRatio);
+    //     console.log('newWidth', newWidth)
+
+    //     if (newWidth >= 50 && newWidth <= 310) {
+    //         document.getElementById('previewImg').style.height = `${reqH * 2}px`;
+    //         document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
+    //         document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
+    //         document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
+    //     } else if (newWidth < 50) {
+    //         document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
+    //         document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
+    //         document.getElementById('changeSizeHeight').value = `${50}`;
+    //         document.getElementById('changeSizeWidth').value = `${(50 / imgAspectRatio).toFixed(2)}`;
+    //     } else if (newWidth > 310) {
+    //         document.getElementById('previewImg').style.height = `${620 * imgAspectRatio}px`;
+    //         document.getElementById('previewImg').style.width = `${620 / imgAspectRatio}px`;
+    //         if (newWidth < reqH) {
+    //             document.getElementById('changeSizeHeight').value = `${310}`;
+    //         } else {
+    //             document.getElementById('changeSizeWidth').value = `${310}`;
+    //         }
+    //         document.getElementById('changeSizeWidth').value = `${(620 / imgAspectRatio).toFixed(2)}`;
+    //     }
+    // }
+
+    // if (reqW) {
+    //     reqW = parseInt(reqW);
+    //     document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
+
+    //     const newHeight = (reqW * imgAspectRatio);
+        
+    //     if (newHeight >= 50 && newHeight <= 310) {
+    //         document.getElementById('previewImg').style.width = `${reqW * 2}px`;
+    //         document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
+    //         document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
+    //     } /*else if (newHeight < 50) {
+    //         console.log('minimal');
+    //         document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
+    //         document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
+    //         document.getElementById('changeSizeHeight').value = `${(50 * imgAspectRatio).toFixed(2)}`;
+    //     } else if (newHeight > 310) {
+    //         document.getElementById('previewImg').style.width = `${(620 / imgAspectRatio)}px`;
+    //         document.getElementById('previewImg').style.height = `${(620 * imgAspectRatio)}px`;
+    //         document.getElementById('changeSizeHeight').value = `${(310 * imgAspectRatio).toFixed(2)}`;
+    //     }*/
+    // }
 }
 
 /* Handle events after the document is ready and all DOM elements are loaded */

@@ -69,18 +69,18 @@ function constrainImg(reqH, reqW) {
         reqW = parseFloat(reqW);
     }
 
-    const imgAspectRatio = submittedFileDetails.height / submittedFileDetails.width;
-    console.log('imgAspectRatio: ', imgAspectRatio);
+    const aspectRatio = submittedFileDetails.height / submittedFileDetails.width;
+    console.log('aspectRatio: ', aspectRatio);
 
-    if (imgAspectRatio == 1) {
+    if (aspectRatio == 1) {
         let req = reqH || reqW;
         document.getElementById('previewImg').style.height = `${req * 2}px`;
         document.getElementById('previewImg').style.width = `${document.getElementById('previewImg').style.width}`;
         document.getElementById('changeSizeHeight').value = `${req.toFixed(2)}`;
         document.getElementById('changeSizeWidth').value = `${document.getElementById('changeSizeHeight').value}`;
-    } else if (imgAspectRatio < 1) { // Width is greater than height
+    } else if (aspectRatio < 1) { // Width is greater than height
         if (reqH) {
-            const newWidth = (reqH / imgAspectRatio);
+            const newWidth = (reqH / aspectRatio);
             console.log('newWidth: ', newWidth)
 
             if (newWidth >= 50 && newWidth <= 310) {
@@ -89,27 +89,27 @@ function constrainImg(reqH, reqW) {
                 document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
                 document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
             } else if (newWidth < 50) {
-                document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
+                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${100 / aspectRatio}px`;
                 document.getElementById('changeSizeHeight').value = `${50}`;
-                document.getElementById('changeSizeWidth').value = `${(50 / imgAspectRatio).toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${(50 / aspectRatio).toFixed(2)}`;
             } else if (newWidth > 310) {
-                document.getElementById('previewImg').style.height = `${620 * imgAspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${620 / imgAspectRatio}px`;
+                document.getElementById('previewImg').style.height = `${620 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${620 / aspectRatio}px`;
                 if (newWidth < reqH) {
                     document.getElementById('changeSizeHeight').value = `${310}`;
                 } else {
                     document.getElementById('changeSizeWidth').value = `${310}`;
                 }
-                document.getElementById('changeSizeWidth').value = `${(620 / imgAspectRatio).toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${(620 / aspectRatio).toFixed(2)}`;
             }
         } else if (reqW) {
-            const newHeight = (reqW / imgAspectRatio);
+            const newHeight = (reqW / aspectRatio);
             console.log('newHeight: ', newHeight)
 
             
         }
-    } else if (imgAspectRatio > 1) { // Height is greater than width
+    } else if (aspectRatio > 1) { // Height is greater than width
         document.getElementById('previewImg').style.height = `${req * 2}px`;
         document.getElementById('previewImg').style.width = `${document.getElementById('previewImg').style.width}`;
         document.getElementById('changeSizeHeight').value = `${req.toFixed(2)}`;

@@ -4,7 +4,7 @@ var storedFile = null;
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
 var contourIdsPoints = [];
 
-var wireHeat = false; // true: Wire is receiving current and hot, false: Wire is not receiving current but may be hot
+var spindleRotation = false; // true: Wire is receiving current and hot, false: Wire is not receiving current but may be hot
 
 
 // Global functions //
@@ -44,8 +44,8 @@ db.serialize(() => {
     //db.exec("DROP TABLE ProspectData");
     //db.exec("DROP TABLE Instructions");
 
-    db.exec("CREATE TABLE IF NOT EXISTS ProspectData (id INTEGER PRIMARY KEY AUTOINCREMENT, tracing BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT)");
-    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, wireHeat BOOLEAN)")
+    db.exec("CREATE TABLE IF NOT EXISTS ProspectData (id INTEGER PRIMARY KEY AUTOINCREMENT, tracing BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT, spindleRotation BOOLEAN)");
+    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, spindleRotation BOOLEAN)")
     //db.run(`INSERT INTO Instructions (id, action, message) VALUES (NULL, '', '')`);
 
     console.log("Database initialised.");
@@ -97,7 +97,7 @@ app.get(`/home`, (req, res) => {
 });
 
 
-app.get('/MCActions', (req, res) => {
+app.get('/MCStatus', (req, res) => {
     db.serialize(() => {
         db.all("SELECT * FROM Instructions", (err, rows) => { // Retrieves the records from the Instructions table
             res.send(JSON.stringify(rows[0]));
@@ -105,22 +105,24 @@ app.get('/MCActions', (req, res) => {
     });
 });
 
-function updateMCActions(action, message, wireHeat) {
+function updateMCStatus(action, message, spindleRotation) {
     let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'tracing' | 'warning' | 'error' |
     let messageVar = message || "";
-    let wireHeatVar = false;
-    if (typeof wireHeat == "boolean") {
-        wireHeatVar = wireHeat || fals
-    } else if (typeof wireHeat == "string") {
-        if (wireHeat == "toggle") {wireHeatVar = !wireHeatVar};
+    let spindleRotationVar = false;
+    if (typeof spindleRotation == "boolean") {
+        spindleRotationVar = spindleRotation || false;
+    } else if (typeof spindleRotation == "string") {
+        if (spindleRotation == "toggle") {
+            spindleRotationVar = !spindleRotationVar
+        };
     }
 
     db.serialize(() => {
-        db.run(`UPDATE Instructions SET action='${actionVar}', message='${messageVar}', wireHeat='${wireHeatVar}' WHERE id='1'`)
+        db.run(`UPDATE Instructions SET action='${actionVar}', message='${messageVar}', spindleRotation='${spindleRotationVar}' WHERE id='1'`)
     });
 }
-//db.run(`INSERT INTO Instructions (id, action, message, wireHeat) VALUES (NULL, 'idle', '', false)`)
-//updateMCActions("idle", "Test", false);
+//db.run(`INSERT INTO Instructions (id, action, message, spindleRotation) VALUES (NULL, 'idle', '', false)`)
+//updateMCStatus("idle", "Test", false);
 
 // Get the current instructions from the database -- Microcontroller reads from this
 app.get('/MCInstructions', (req, res) => {
@@ -212,12 +214,12 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             io.emit('completion time', (currentDate + shadedPixelCount));
 
             addToDatabase(imagePoints, storedFile);
-            updateMCActions('tracing', null, true);
+            updateMCStatus('tracing', null, true);
             break;
 
         case 'toggle wire heat':
-            wireHeat = !wireHeat;
-            io.emit('nichrome heat', wireHeat.toString());
+            spindleRotation = !spindleRotation;
+            io.emit('nichrome heat', spindleRotation.toString());
             db.serialize(() => {
 
             });
@@ -436,7 +438,7 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
         return;
     }*/
 
-    updateMCActions('processing');
+    updateMCStatus('processing');
 
     for (let y = 0; y < image.cols; y++) { // Loop through every column of pixels in the image
         io.emit('processing image progress', {y: y});
@@ -480,12 +482,14 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
         setTimeout(function() {
             io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
             io.emit('processed', {'objectNumber': contoursAmount});
-            updateMCActions('processed', "begin taking data");
+            updateMCStatus('processed', "begin taking data");
         }, 3000);
     }
+    
+    updateMCStatus('tracing', null, spindleRotation);
 
     // console.log("====== function 'processImage' OUTPUT END ======\n");
-    return addToDatabase(imagePoints, imageFileDetails);
+    return addToDatabase(imagePoints, imageFileDetails, spindleRotation);
 }
 
 function arrayToChunks(array, chunkSize) {
@@ -502,10 +506,11 @@ function arrayToChunks(array, chunkSize) {
 
 
 // Add imageFile details and microcontroller instructions to the database to be served on '/MCInstructions' for the ESP32 to read
-function addToDatabase(imagePoints, imageFileDetails) {
+function addToDatabase(imagePoints, imageFileDetails, spindleRotation) {
     //console.log("\n====== function 'addToDatabase' OUTPUT START ======");
     if (!imagePoints) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imagePoints' RECEIVED");
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
+    if (!spindleRotation) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'spindleRotation' RECEIVED ")
 
     // console.log("imgPnts: ");
     // console.log(imagePoints);
@@ -523,7 +528,7 @@ function addToDatabase(imagePoints, imageFileDetails) {
         db.each(`SELECT * FROM ProspectData WHERE tracing='1'`, (error, row) => {
             db.run(`UPDATE ProspectData SET tracing=0 WHERE id='${row.id}'`)
         });
-        db.run(`INSERT INTO ProspectData (id, tracing, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}')`)
+        db.run(`INSERT INTO ProspectData (id, tracing, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}', ${spindleRotation})`)
     });
     // console.log("====== function 'addToDatabase' OUTPUT END ======\n");
 }

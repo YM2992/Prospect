@@ -1,6 +1,6 @@
 // ESP32 microcontroller code || Receives data from web server and relays to the arduino.
 
-// Require the WiFi and HTTPClient libraries
+// Include libraries into this project
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClient.h>
@@ -38,16 +38,16 @@ int chunkId = 0;
 // The setup function will run one time when the microcontroller starts
 void setup() {
   Serial.begin(115200);
-  Myserial.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  Myserial.begin(9600, SERIAL_8N1, RXD2, TXD2); // Begin serial connection with the Arduino
   delay(4000);
   WiFi.begin(WAPssid, WAPpassword);
 
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) { // Wait until the ESP32 has connected to the server
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
 
-  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.localIP()); // Print the local IP for debug purposes
 }
 
 // The loop function will continually run as long as the microcontroller is alive
@@ -55,6 +55,8 @@ void loop() {
   if (chunkSend) {
     if (WiFi.status() == WL_CONNECTED) {
       HTTPClient httpActions;
+
+      // Get the current action request from the server
       httpActions.begin("http://192.168.1.107:8080/MCActions");
       int httpACode = httpActions.GET();
       if (httpACode > 0) {
@@ -75,6 +77,7 @@ void loop() {
         } else if (String(actionRes) == "cutting") {
           HTTPClient httpIns;
 
+          // Get the cutting points from the server
           httpIns.begin("http://192.168.1.107:8080/MCInstructions?id=" + String(chunkId));
           //Serial.println(chunkId);
           int httpInsCode = httpIns.GET();

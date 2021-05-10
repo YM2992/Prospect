@@ -90,7 +90,7 @@ function constrainImg(reqH, reqW) {
                 document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
             } else if (newWidth < 50) {
                 document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${50}px`;
+                document.getElementById('previewImg').style.width = `${100}px`;
                 document.getElementById('changeSizeHeight').value = `${50}`;
                 document.getElementById('changeSizeWidth').value = `${(50 / aspectRatio).toFixed(2)}`;
             } else if (newWidth > 310) {
@@ -121,7 +121,47 @@ function constrainImg(reqH, reqW) {
             }
         }
     } else if (aspectRatio > 1) { // Height is greater than width
+        if (reqH) {
+            const newWidth = (reqH / aspectRatio);
+            console.log('newWidth: ', newWidth)
 
+            if (newWidth >= 50 && newWidth <= 310) {
+                document.getElementById('previewImg').style.height = `${reqH * 2}px`;
+                document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
+                document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
+            } else if (newWidth < 50) {
+                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${100}px`;
+                document.getElementById('changeSizeHeight').value = `${(50 * aspectRatio).toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${50}`;
+            } else if (newWidth > 310) {
+                document.getElementById('previewImg').style.height = `${620 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${620}px`;
+                document.getElementById('changeSizeHeight').value = `${310}`;
+                document.getElementById('changeSizeWidth').value = `${(310 * aspectRatio).toFixed(2)}`;
+            }
+        } else if (reqW) {
+            const newHeight = (reqW * aspectRatio);
+            console.log('newHeight: ', newHeight)
+
+            if (newHeight >= 50 && newHeight <= 310) {
+                document.getElementById('previewImg').style.width = `${reqW * 2}px`;
+                document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
+                document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
+                document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
+            } else if (newHeight < 50) {
+                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${100 / aspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${50}`;
+                document.getElementById('changeSizeWidth').value = `${(50 / aspectRatio).toFixed(2)}`;
+            } else if (newHeight > 310) {
+                document.getElementById('previewImg').style.width = `${620 / aspectRatio}px`;
+                document.getElementById('previewImg').style.height = `${620 * aspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${310}`;
+                document.getElementById('changeSizeWidth').value = `${(310 / aspectRatio).toFixed(2)}`;
+            }
+        }
     }
 
     // if (reqH) {

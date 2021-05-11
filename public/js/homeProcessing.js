@@ -4,10 +4,16 @@ const HostIP = '192.168.137.1';
 var contourIds = [];
 
 var submittedFile = null;
-var submittedFileDetails = {
-    height: 0,
-    width: 0
-};
+var fileDimensions = {
+    original: {
+        height: 0,
+        width: 0
+    },
+    submitted: {
+        height: 0,
+        width: 0
+    }
+}
 
 
 /* Event logs */
@@ -58,7 +64,7 @@ function fileDropDivDragDrop(ev) {
 
 // Fit previewImg to container
 function constrainImg(reqH, reqW) {
-    if (!submittedFileDetails.height || !submittedFileDetails.width) return false;
+    if (!fileDimensions.original.height || !fileDimensions.original.width) return false;
     
     console.log(reqH, reqW);
     
@@ -69,7 +75,7 @@ function constrainImg(reqH, reqW) {
         reqW = parseFloat(reqW);
     }
 
-    const aspectRatio = submittedFileDetails.height / submittedFileDetails.width;
+    const aspectRatio = fileDimensions.original.height / fileDimensions.original.width;
     console.log('aspectRatio: ', aspectRatio);
 
     if (aspectRatio == 1) {
@@ -291,6 +297,12 @@ $(document).ready(function() {
         document.getElementById('fileInput').disabled = true;
         document.getElementById('submitImage').disabled = true;
 
+        fileDimensions.submitted.height = parseFloat(document.getElementById('changeSizeHeight').value);
+        fileDimensions.submitted.width = parseFloat(document.getElementById('changeSizeWidth').value);
+
+        document.getElementById('changeSizeHeight').disabled = true;
+        document.getElementById('changeSizeWidth').disabled = true;
+
         let selectedTraceMethod;
         document.getElementsByName('traceMethod').forEach((radBtn) => {
             if (radBtn.checked) {
@@ -414,14 +426,14 @@ function getOutput() {
                 return;
             }*/
 
-            submittedFileDetails.height = this.height;
-            submittedFileDetails.width = this.width;
+            fileDimensions.original.height = this.height;
+            fileDimensions.original.width = this.width;
         }
     }
     reader.readAsDataURL(imageFile);
     
     setTimeout(() => {
-        constrainImg(submittedFileDetails.height / 2, null);
+        constrainImg(fileDimensions.original.height / 2, null);
     }, 100);
     
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
@@ -483,6 +495,13 @@ function addContourOnImage(contourId, x, y) {
     newContourPixel.classList.add(`contourId${contourId}`);
     newContourPixel.classList.add('contourEnabled');
     contoursElement.appendChild(newContourPixel);
+
+    /*console.log('addContourOnImage - x: ', x);
+    console.log('addContourOnImage - y: ', y);
+
+    console.log('addContourOnImage - currentH: ', fileDimensions.submitted.height * 2);
+    console.log('addContourOnImage - currentW: ', fileDimensions.submitted.width * 2);*/
+    
     newContourPixel.style.left = `${x}px`;
     newContourPixel.style.top = `${y}px`;
 
@@ -554,7 +573,7 @@ var progressAlreadyGiven = [];
 socket.on('processing image progress', (data) => {
     if (data.y) {
         let processProgressRepetition = setInterval(() => {
-            if (data.y >= submittedFileDetails.width) {
+            if (data.y >= fileDimensions.original.width) {
                 clearInterval(processProgressRepetition);
             }
             alterProcessProgress(data.y - 1);
@@ -564,7 +583,7 @@ socket.on('processing image progress', (data) => {
     
     if (data.x) {
         setTimeout(function() {
-            const xAsPercentage = parseInt(data.x/submittedFileDetails.height * 100) + 1;
+            const xAsPercentage = parseInt(data.x/fileDimensions.original.height * 100) + 1;
             document.getElementById('progressBar').style.width = `${xAsPercentage}%`;
             document.getElementById('progressBarSpan').innerHTML = `Processing image`;
             if (!progressAlreadyGiven.includes(xAsPercentage)) {

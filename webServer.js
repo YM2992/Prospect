@@ -528,7 +528,7 @@ function addToDatabase(imagePoints, imageFileDetails, spindleRotation) {
         db.each(`SELECT * FROM ProspectData WHERE tracing='1'`, (error, row) => {
             db.run(`UPDATE ProspectData SET tracing=0 WHERE id='${row.id}'`)
         });
-        db.run(`INSERT INTO ProspectData (id, tracing, fileName, fileSize, progress, points, formattedPoints) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}', ${spindleRotation})`)
+        db.run(`INSERT INTO ProspectData (id, tracing, fileName, fileSize, progress, points, formattedPoints, spindleRotation) VALUES (NULL, true, '${imageFileDetails.filename}', '${imageFileDetails.size}', '0', '${imagePoints}', '${formattedPoints}', ${spindleRotation})`)
     });
     // console.log("====== function 'addToDatabase' OUTPUT END ======\n");
 }

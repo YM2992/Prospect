@@ -1,6 +1,19 @@
 
 /* Global Variables */
+// Constants
 const HostIP = '192.168.137.1';
+const fileConstraints = {
+    // Dimension restrictions //
+    minHeight: 50,
+    minWidth: 50,
+    maxHeight: 310,
+    maxWidth: 310,
+
+    // File type restrictions //
+    acceptedFileTypes: ['image/png']
+}
+
+// Variables
 var contourIds = [];
 
 var submittedFile = null;
@@ -14,6 +27,7 @@ var fileDimensions = {
         width: 0
     }
 }
+/* End Global Variables */
 
 
 /* Event logs */
@@ -34,6 +48,7 @@ function newEventLogs(messages) {
         document.getElementById('eventLogsDiv').appendChild(newEventMessageBG);
     }
 }
+/* End Event logs */
 
 
 // Start a socket.io connection with the server
@@ -45,24 +60,7 @@ const socket = io(`http://${HostIP}:8080`, {
 });
 
 
-function fileDropDivDragEnter(ev) {
-    ev.preventDefault();
-        console.log("dragenter");
-}
-function fileDropDivDragOver(ev) {
-    ev.preventDefault();
-    console.log("dragover");
-    ev.dataTransfer.dropEffect = 'move';
-}
-function fileDropDivDragDrop(ev) {
-    ev.preventDefault();
-    console.log("dropped");
-    document.getElementById('fileInput').files[0] = ev.dataTransfer.getData('files')[0];
-    console.log(ev.dataTransfer)
-}
-
-
-// Fit previewImg to container
+/* Fit previewImg to container and maintain aspect ratio */
 function constrainImg(reqH, reqW) {
     if (!fileDimensions.original.height || !fileDimensions.original.width) return false;
     
@@ -89,41 +87,41 @@ function constrainImg(reqH, reqW) {
             const newWidth = (reqH / aspectRatio);
             console.log('newWidth: ', newWidth)
 
-            if (newWidth >= 50 && newWidth <= 310) {
+            if (newWidth >= fileConstraints.minWidth && newWidth <= fileConstraints.maxWidth) {
                 document.getElementById('previewImg').style.height = `${reqH * 2}px`;
                 document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
                 document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
                 document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
-            } else if (newWidth < 50) {
-                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${100}px`;
-                document.getElementById('changeSizeHeight').value = `${50}`;
-                document.getElementById('changeSizeWidth').value = `${(50 / aspectRatio).toFixed(2)}`;
-            } else if (newWidth > 310) {
-                document.getElementById('previewImg').style.height = `${620 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${620}px`;
-                document.getElementById('changeSizeHeight').value = `${(310 * aspectRatio).toFixed(2)}`;
-                document.getElementById('changeSizeWidth').value = `${310}`;
+            } else if (newWidth < fileConstraints.minWidth) {
+                document.getElementById('previewImg').style.height = `${fileConstraints.minHeight * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${fileConstraints.minWidth * 2}px`;
+                document.getElementById('changeSizeHeight').value = `${fileConstraints.minHeight}`;
+                document.getElementById('changeSizeWidth').value = `${(fileConstraints.minWidth / aspectRatio).toFixed(2)}`;
+            } else if (newWidth > fileConstraints.maxWidth) {
+                document.getElementById('previewImg').style.height = `${fileConstraints.maxHeight * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${fileConstraints.maxWidth * 2}px`;
+                document.getElementById('changeSizeHeight').value = `${(fileConstraints.maxHeight * aspectRatio).toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${fileConstraints.maxWidth}`;
             }
         } else if (reqW) {
             const newHeight = (reqW * aspectRatio);
             console.log('newHeight: ', newHeight)
 
-            if (newHeight >= 50 && newHeight <= 310) {
+            if (newHeight >= fileConstraints.minHeight && newHeight <= fileConstraints.maxHeight) {
                 document.getElementById('previewImg').style.width = `${reqW * 2}px`;
                 document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
                 document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
                 document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
-            } else if (newHeight < 50) {
-                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${100 / aspectRatio}px`;
-                document.getElementById('changeSizeHeight').value = `${50}`;
-                document.getElementById('changeSizeWidth').value = `${(50 / aspectRatio).toFixed(2)}`;
-            } else if (newHeight > 310) {
-                document.getElementById('previewImg').style.width = `${620 * aspectRatio}px`;
-                document.getElementById('previewImg').style.height = `${620 / aspectRatio}px`;
-                document.getElementById('changeSizeHeight').value = `${(310 * aspectRatio).toFixed(2)}`;
-                document.getElementById('changeSizeWidth').value = `${310}`;
+            } else if (newHeight < fileConstraints.minHeight) {
+                document.getElementById('previewImg').style.height = `${fileConstraints.minHeight * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${fileConstraints.minWidth * 2 / aspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${fileConstraints.minHeight}`;
+                document.getElementById('changeSizeWidth').value = `${(fileConstraints.minWidth / aspectRatio).toFixed(2)}`;
+            } else if (newHeight > fileConstraints.maxHeight) {
+                document.getElementById('previewImg').style.width = `${fileConstraints.maxWidth * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.height = `${fileConstraints.maxHeight * 2 / aspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${(fileConstraints.maxHeight * aspectRatio).toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${fileConstraints.maxWidth}`;
             }
         }
     } else if (aspectRatio > 1) { // Height is greater than width
@@ -131,118 +129,56 @@ function constrainImg(reqH, reqW) {
             const newWidth = (reqH / aspectRatio);
             console.log('newWidth: ', newWidth)
 
-            if (newWidth >= 50 && newWidth <= 310) {
+            if (newWidth >= fileConstraints.minWidth && newWidth <= fileConstraints.maxWidth) {
                 document.getElementById('previewImg').style.height = `${reqH * 2}px`;
                 document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
                 document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
                 document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
-            } else if (newWidth < 50) {
-                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${100}px`;
-                document.getElementById('changeSizeHeight').value = `${(50 * aspectRatio).toFixed(2)}`;
-                document.getElementById('changeSizeWidth').value = `${50}`;
-            } else if (newWidth > 310) {
-                document.getElementById('previewImg').style.height = `${620 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${620}px`;
-                document.getElementById('changeSizeHeight').value = `${310}`;
-                document.getElementById('changeSizeWidth').value = `${(310 * aspectRatio).toFixed(2)}`;
+            } else if (newWidth < fileConstraints.minWidth) {
+                document.getElementById('previewImg').style.height = `${fileConstraints.minHeight * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${fileConstraints.minWidth * 2}px`;
+                document.getElementById('changeSizeHeight').value = `${(fileConstraints.minHeight * aspectRatio).toFixed(2)}`;
+                document.getElementById('changeSizeWidth').value = `${fileConstraints.minWidth}`;
+            } else if (newWidth > fileConstraints.maxWidth) {
+                document.getElementById('previewImg').style.height = `${fileConstraints.maxHeight * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${fileConstraints.maxWidth * 2}px`;
+                document.getElementById('changeSizeHeight').value = `${fileConstraints.maxHeight}`;
+                document.getElementById('changeSizeWidth').value = `${(fileConstraints.maxWidth * aspectRatio).toFixed(2)}`;
             }
         } else if (reqW) {
             const newHeight = (reqW * aspectRatio);
             console.log('newHeight: ', newHeight)
 
-            if (newHeight >= 50 && newHeight <= 310) {
+            if (newHeight >= fileConstraints.minHeight && newHeight <= fileConstraints.maxHeight) {
                 document.getElementById('previewImg').style.width = `${reqW * 2}px`;
                 document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
                 document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
                 document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
-            } else if (newHeight < 50) {
-                document.getElementById('previewImg').style.height = `${100 * aspectRatio}px`;
-                document.getElementById('previewImg').style.width = `${100 / aspectRatio}px`;
-                document.getElementById('changeSizeHeight').value = `${50}`;
-                document.getElementById('changeSizeWidth').value = `${(50 / aspectRatio).toFixed(2)}`;
-            } else if (newHeight > 310) {
-                document.getElementById('previewImg').style.width = `${620 / aspectRatio}px`;
-                document.getElementById('previewImg').style.height = `${620 * aspectRatio}px`;
-                document.getElementById('changeSizeHeight').value = `${310}`;
-                document.getElementById('changeSizeWidth').value = `${(310 / aspectRatio).toFixed(2)}`;
+            } else if (newHeight < fileConstraints.minHeight) {
+                document.getElementById('previewImg').style.height = `${fileConstraints.minHeight * 2 * aspectRatio}px`;
+                document.getElementById('previewImg').style.width = `${fileConstraints.minWidth * 2 / aspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${fileConstraints.minHeight}`;
+                document.getElementById('changeSizeWidth').value = `${(fileConstraints.minWidth / aspectRatio).toFixed(2)}`;
+            } else if (newHeight > fileConstraints.maxHeight) {
+                document.getElementById('previewImg').style.width = `${fileConstraints.maxWidth * 2 / aspectRatio}px`;
+                document.getElementById('previewImg').style.height = `${fileConstraints.maxHeight * 2 * aspectRatio}px`;
+                document.getElementById('changeSizeHeight').value = `${fileConstraints.maxHeight}`;
+                document.getElementById('changeSizeWidth').value = `${(fileConstraints.maxWidth / aspectRatio).toFixed(2)}`;
             }
         }
     }
-
-    // if (reqH) {
-    //     reqH = parseInt(reqH);
-    //     //document.getElementById('changeSizeHeight').value = `${(reqH * 2).toFixed(2)}`;
-
-    //     const newWidth = (reqH / imgAspectRatio);
-    //     console.log('newWidth', newWidth)
-
-    //     if (newWidth >= 50 && newWidth <= 310) {
-    //         document.getElementById('previewImg').style.height = `${reqH * 2}px`;
-    //         document.getElementById('previewImg').style.width = `${newWidth * 2}px`;
-    //         document.getElementById('changeSizeHeight').value = `${reqH.toFixed(2)}`;
-    //         document.getElementById('changeSizeWidth').value = `${newWidth.toFixed(2)}`;
-    //     } else if (newWidth < 50) {
-    //         document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
-    //         document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
-    //         document.getElementById('changeSizeHeight').value = `${50}`;
-    //         document.getElementById('changeSizeWidth').value = `${(50 / imgAspectRatio).toFixed(2)}`;
-    //     } else if (newWidth > 310) {
-    //         document.getElementById('previewImg').style.height = `${620 * imgAspectRatio}px`;
-    //         document.getElementById('previewImg').style.width = `${620 / imgAspectRatio}px`;
-    //         if (newWidth < reqH) {
-    //             document.getElementById('changeSizeHeight').value = `${310}`;
-    //         } else {
-    //             document.getElementById('changeSizeWidth').value = `${310}`;
-    //         }
-    //         document.getElementById('changeSizeWidth').value = `${(620 / imgAspectRatio).toFixed(2)}`;
-    //     }
-    // }
-
-    // if (reqW) {
-    //     reqW = parseInt(reqW);
-    //     document.getElementById('changeSizeWidth').value = `${reqW.toFixed(2)}`;
-
-    //     const newHeight = (reqW * imgAspectRatio);
-        
-    //     if (newHeight >= 50 && newHeight <= 310) {
-    //         document.getElementById('previewImg').style.width = `${reqW * 2}px`;
-    //         document.getElementById('previewImg').style.height = `${newHeight * 2}px`;
-    //         document.getElementById('changeSizeHeight').value = `${newHeight.toFixed(2)}`;
-    //     } /*else if (newHeight < 50) {
-    //         console.log('minimal');
-    //         document.getElementById('previewImg').style.width = `${100 / imgAspectRatio}px`;
-    //         document.getElementById('previewImg').style.height = `${100 * imgAspectRatio}px`;
-    //         document.getElementById('changeSizeHeight').value = `${(50 * imgAspectRatio).toFixed(2)}`;
-    //     } else if (newHeight > 310) {
-    //         document.getElementById('previewImg').style.width = `${(620 / imgAspectRatio)}px`;
-    //         document.getElementById('previewImg').style.height = `${(620 * imgAspectRatio)}px`;
-    //         document.getElementById('changeSizeHeight').value = `${(310 * imgAspectRatio).toFixed(2)}`;
-    //     }*/
-    // }
 }
+/* End Fit previewImg to container and maintain aspect ratio */
+
 
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
-    // Drag and drop file input
-    /*const fileDropDiv = document.getElementById('fileDropPoint');
-
-    fileDropDiv.addEventListener('dragenter', function(event) {
-        event.preventDefault();
-    });
-    fileDropDiv.addEventListener('dragover', function(event) {
-        event.preventDefault();
-    });
-    fileDropDiv.addEventListener('drop dragdrop', function(event) {
-        event.preventDefault();
-    });*/
-
     $('#changeSizeHeight').change(function(e) {
         if (!this.value) return
-        if (this.value < 50) {
-            this.value = 50;
-        } else if (this.value > 310) {
-            this.value = 310;
+        if (this.value < fileConstraints.minHeight) {
+            this.value = fileConstraints.minHeight;
+        } else if (this.value > fileConstraints.maxHeight) {
+            this.value = fileConstraints.maxHeight;
         }
 
         constrainImg(this.value, null);
@@ -250,10 +186,10 @@ $(document).ready(function() {
 
     $('#changeSizeWidth').change(function(e) {
         if (!this.value) return
-        if (this.value < 50) {
-            this.value = 50;
-        } else if (this.value > 310) {
-            this.value = 310;
+        if (this.value < fileConstraints.minWidth) {
+            this.value = fileConstraints.minWidth;
+        } else if (this.value > fileConstraints.maxWidth) {
+            this.value = fileConstraints.maxWidth;
         }
 
         constrainImg(null, this.value);
@@ -361,34 +297,16 @@ $(document).ready(function() {
         document.getElementById('imgProcessingProgress').style.visibility = "hidden";
     });
 
-    // Toggle nichrome wire heat
-    /*$('#toggleWireHeat').click(function() {
-        $.ajax({
-            url: '../../webMsg',
-            type: 'POST',
-            data: {'message': 'toggle wire heat'},
-            success: function(data) {
-                console.log(data);
-            }
-        });
-    });*/
-
     // Keep the 'eventLogsDiv' scrolled to the bottom
     $('#eventLogsDiv').bind('DOMSubtreeModified', function() {
         var eventLogsDiv = document.getElementById('eventLogsDiv');
         eventLogsDiv.scrollTop = eventLogsDiv.scrollHeight;
     });
 });
-
-
-/* Drag 'n' Drop image feature */
-
+/* End Handle events after the document is ready and all DOM elements are loaded */
 
 
 /* Image obtaining and relaying */
-let acceptedFileTypes = ['image/png']
-
-
 function getFile(filePath) {
     return filePath.substr(filePath.lastIndexOf('\\') + 1).split('.')[0];
 }
@@ -401,7 +319,7 @@ function getOutput() {
         document.getElementById('submitImage').style.visibility = "hidden";
         return;
     }
-    if (acceptedFileTypes.includes(imageFile.type)) {
+    if (fileConstraints.acceptedFileTypes.includes(imageFile.type)) {
         console.log("Accepted file type");
     } else {
         console.log("Declined file type");
@@ -426,23 +344,23 @@ function getOutput() {
                 return;
             }*/
 
-            fileDimensions.original.height = this.height;
-            fileDimensions.original.width = this.width;
+            fileDimensions.original.height = this.height / 2;
+            fileDimensions.original.width = this.width / 2;
         }
     }
     reader.readAsDataURL(imageFile);
     
     setTimeout(() => {
-        constrainImg(fileDimensions.original.height / 2, null);
+        constrainImg(fileDimensions.original.height, null);
     }, 100);
     
     document.getElementById('previewImg').src = URL.createObjectURL(imageFile);
 
     document.getElementById('submitImage').style.visibility = "visible";
-    //document.getElementById('fileDropPointImg').style.visibility = "hidden";
 }
+/* End Image obtaining and relaying */
 
-
+/* Handle contours and processing progress */
 function progressDivsLoaded() {
     const progressDivs = document.getElementById('progressDivs')
     for (let i = 0; i < 100; i++) {
@@ -501,7 +419,12 @@ function addContourOnImage(contourId, x, y) {
 
     console.log('addContourOnImage - currentH: ', fileDimensions.submitted.height * 2);
     console.log('addContourOnImage - currentW: ', fileDimensions.submitted.width * 2);*/
-    
+
+    //console.log(fileDimensions)
+    console.log('addContourOnImage height', Math.abs(fileDimensions.original.height - fileDimensions.submitted.height))
+    console.log('addContourOnImage width', Math.abs(fileDimensions.original.width - fileDimensions.submitted.width))
+
+
     newContourPixel.style.left = `${x}px`;
     newContourPixel.style.top = `${y}px`;
 
@@ -535,6 +458,7 @@ function incrementProcessProgress() {
     const complete = alterProcessProgress(parseInt(`${processingProgress / 100}`));
     if (complete) return true;
 }
+/* End Handle contours and processing progress */
 
 
 /* socket.io live updates server-client */
@@ -639,3 +563,4 @@ socket.on('completion time', (completionDate) => {
         document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
     }, 1000);
 });
+/* End socket.io handling */

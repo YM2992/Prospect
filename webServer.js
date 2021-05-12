@@ -532,4 +532,3 @@ function addToDatabase(imagePoints, imageFileDetails, spindleRotation) {
     });
     // console.log("====== function 'addToDatabase' OUTPUT END ======\n");
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

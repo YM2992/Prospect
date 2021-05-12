@@ -217,12 +217,24 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             updateMCStatus('tracing', null, true);
             break;
 
-        case 'toggle wire heat':
+        /*case 'toggle wire heat':
             spindleRotation = !spindleRotation;
             io.emit('nichrome heat', spindleRotation.toString());
             db.serialize(() => {
 
             });
+            break;*/
+        
+        case 'translateSpindle':
+            if (req.body.dir == -1) {
+                
+            } else if (req.body.dir == 1) {
+
+            }
+            break;
+        
+        case 'setSpindle':
+
             break;
     }
 });

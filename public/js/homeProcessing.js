@@ -195,21 +195,35 @@ $(document).ready(function() {
         constrainImg(null, this.value);
     });
 
+    function spindleRequests(command, dir) {
+        if (command == "translateSpindle" || command == "setSpindle") {
+            if (dir == -1 || dir == 1) {
+                $.ajax({
+                    url: '../../webMsg',
+                    type: 'POST',
+                    data: {'message': `${command}`, 'dir': dir},
+                    success: function(data) {
+                        console.log(data);
+                    }
+                });
+            }
+        }
+    }
 
     // Set spindle positions
     function translateSpindle(direction) {
         if (direction > 0) {
-            console.log("translate up")
+            spindleRequests("translateSpindle", 1);
         } else if (direction < 0) {
-            console.log("translate down")
+            spindleRequests("translateSpindle", -1);
         }
     }
 
     function setSpindlePos(pos) {
         if (pos > 0) {
-            console.log("set up")
+            spindleRequests("setSpindle", 1);
         } else if (pos < 0) {
-            console.log("set down")
+            spindleRequests("setSpindle", -1);
         }
     }
 

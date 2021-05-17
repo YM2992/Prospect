@@ -4,8 +4,6 @@ var storedFile = null;
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
 var contourIdsPoints = [];
 
-var spindleRotation = false; // true: Wire is receiving current and hot, false: Wire is not receiving current but may be hot
-
 
 // Global functions //
 function debugLog(message) {
@@ -464,7 +462,7 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
             //console.log(`RGB: ${r}, ${g}, ${b}`)
 
             if (r <= 50 && g <= 50 && b <= 50) { // Check if the pixel is shaded, where the microcontrollers will direct the stepper motors to move the nichrome wire to
-                imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
+                //imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
                 shadedPixelCount++ // Increment shadedPixelCount
             }
 
@@ -494,7 +492,7 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
         setTimeout(function() {
             io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
             io.emit('processed', {'objectNumber': contoursAmount});
-            updateMCStatus('processed', "begin taking data");
+            updateMCStatus('processed', "begin taking data", spindleRotation);
         }, 3000);
     }
     

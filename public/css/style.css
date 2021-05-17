@@ -18,6 +18,13 @@ header img {
     height: 100%;
 }
 
+.headerTitle {
+    padding-top: 10px;
+    padding-left: 30px;
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color: rgb(90, 74, 225);
+}
+
 
 /* Uploaded image preview */
 #workspaceDiv {

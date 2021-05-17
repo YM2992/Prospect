@@ -428,15 +428,16 @@ function addContourOnImage(contourId, x, y) {
     newContourPixel.classList.add('contourEnabled');
     contoursElement.appendChild(newContourPixel);
 
-    /*console.log('addContourOnImage - x: ', x);
+    console.log('addContourOnImage - x: ', x);
     console.log('addContourOnImage - y: ', y);
 
-    console.log('addContourOnImage - currentH: ', fileDimensions.submitted.height * 2);
-    console.log('addContourOnImage - currentW: ', fileDimensions.submitted.width * 2);*/
-
     //console.log(fileDimensions)
-    console.log('addContourOnImage height', Math.abs(fileDimensions.original.height - fileDimensions.submitted.height))
-    console.log('addContourOnImage width', Math.abs(fileDimensions.original.width - fileDimensions.submitted.width))
+
+    const xPos = x * (fileDimensions.submitted.height / Math.abs(fileDimensions.submitted.height - fileDimensions.original.height));
+    const yPos = y * (fileDimensions.submitted.width / Math.abs(fileDimensions.submitted.width - fileDimensions.original.width));
+
+    console.log('addContourOnImage height', xPos)
+    console.log('addContourOnImage width', yPos)
 
 
     newContourPixel.style.left = `${x}px`;

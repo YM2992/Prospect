@@ -5,6 +5,24 @@ body {
     overflow: hidden;
 }
 
+/* Change fonts to 'Bebas Neue' */
+p {
+    font-family: 'Bebas Neue', sans-serif;
+}
+label {
+    font-size: 30px;
+    font-family: 'Bebas Neue', sans-serif;
+}
+input {
+    font-size: 20px;
+    font-family: 'Bebas Neue', sans-serif;
+}
+button {
+    font-size: 20px;
+    font-family: 'Bebas Neue', sans-serif;
+}
+
+
 /* Header */
 header {
     height: 100px;
@@ -21,7 +39,7 @@ header img {
 .headerTitle {
     padding-top: 10px;
     padding-left: 30px;
-    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif !important;
     color: rgb(90, 74, 225);
 }
 
@@ -126,10 +144,15 @@ header img {
 
 
 /* Form */
+#fileInputLbl {
+    width: 1000px;
+    position: absolute;
+    top: -20px;
+}
 #fileInput {
     position: absolute;
     left: 10px;
-    top: 30px;
+    top: 20px;
 }
 
 #formDiv {
@@ -157,7 +180,7 @@ header img {
 /* Action buttons */
 #actionButtonsDiv {
     height: 450px;
-    width: 275px;
+    width: 450px;
     position: absolute;
     top: 160px;
     left: 675px;
@@ -177,14 +200,30 @@ header img {
     margin-bottom: 30px;
     margin-left: 100px;
     visibility: hidden;
+    height: 40px;
+    width: 200px;
+    font-size: 30px;
 }
 
+
+#translateSpindleUp {
+
+}
+#translateSpindleDown {
+    transform: rotate(180deg);
+}
 .translateSpindle {
-    padding-left: 30px;
-    padding-right: 30px;
+    padding-left: 50px;
+    padding-right: 50px;
+    height: 40px;
+    font-weight: bolder;
+    font-size: 30px;
 }
 .setSpindle {
     margin-left: 60px;
+    height: 40px;
+    width: 250px;
+    font-size: 30px;
 }
 
 #beginTracing {
@@ -196,27 +235,33 @@ header img {
 #changeSizeLbl {
     position: absolute;
     left: 0px;
+    top: -100px;
+}
+.changeSizeTxt {
+    position: absolute;
     top: -60px;
+    height: 40px;
+    width: 100px;
+    text-align: center;
+    background-color: rgb(239, 239, 239);
+    border-style: solid;
+    font-size: 30px;
 }
 #changeSizeHeight {
-    position: absolute;
-    left: 45px;
-    top: -42px;
+    left: 200px;
 }
 #changeSizeWidth {
-    position: absolute;
-    left: 120px;
-    top: -42px;
+    left: 330px;
 }
 
 
 /* Event logs */
 #eventLogsDivTitleBar {
-    height: 25px;
+    height: 40px;
     width: 400px;
     position: absolute;
-    top: 135px;
-    left: 1000px;
+    top: 120px;
+    left: 1250px;
     border: 1px solid black;
     background-color: rgb(250, 248, 241);
 }
@@ -224,6 +269,7 @@ header img {
 #eventLogsDivTitleBar p {
     margin: 5px;
     font-weight: bold;
+    font-size: 25px;
 }
 
 #eventLogsDiv {
@@ -231,7 +277,7 @@ header img {
     width: 400px;
     position: absolute;
     top: 160px;
-    left: 1000px;
+    left: 1250px;
     border: 1px solid black;
     background-color: rgb(250, 248, 241);
     overflow-y: scroll;
@@ -251,8 +297,30 @@ header img {
     border: 0;
     margin-left: 5%;
     display: block;
+    font-family: none;
 }
 
+/* Help button */
+#helpBtn {
+    position: fixed;
+    right: 50px;
+    top: 130px;
+
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 30px;
+    padding-right: 30px;
+
+    font-weight: bolder;
+    font-size: 30px;
+    color: black;
+    background-color: rgb(239, 239, 239);
+    text-decoration: none;
+    text-align: center;
+
+    border-radius: 10px;
+    border-style: solid;
+}
 
 /* Footer */
 footer {
@@ -268,7 +336,7 @@ footer {
 
 footer p {
     width: 500px;
-    font-size: 15px;
+    font-size: 20px;
     text-align: center;
     margin-top: 1.15%;
 }

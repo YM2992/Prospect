@@ -89,9 +89,12 @@ const multer = require('multer'); // Require the 'multer' npm library for use in
 app.get('/', (req, res) => { // Detect when user attempts to call web page with the directory of '/'
     res.redirect(`http://${HostIP}:8080/home`) // Redirect to the home page on the user's screen
 });
-
 app.get(`/home`, (req, res) => {
     res.render('pages/home');
+});
+
+app.get('/help', (req, res) => {
+    res.render('pages/help');
 });
 
 

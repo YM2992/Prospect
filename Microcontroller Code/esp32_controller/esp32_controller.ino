@@ -19,8 +19,8 @@ HardwareSerial Myserial(2);
 
 
 // Declare credentials of target WAP to leech from
-const char* WAPssid = "WiFi-6A10"; //"StyrocutWAP";
-const char* WAPpassword = "05617159"; //"qwerty123";
+const char* WAPssid = "Prospect Server";
+const char* WAPpassword = "635s7F*8";
 
 // Declare credentials of LAN
 const char* LANssid = "StyrocutLAN";
@@ -57,7 +57,7 @@ void loop() {
       HTTPClient httpActions;
 
       // Get the current action request from the server
-      httpActions.begin("http://192.168.1.107:8080/MCActions");
+      httpActions.begin("http://192.168.137.1:8080/MCStatus");
       int httpACode = httpActions.GET();
       if (httpACode > 0) {
         String httpAPload = httpActions.getString();
@@ -65,7 +65,7 @@ void loop() {
 
         //Serial.println(httpAPloadJSON);
         const char* actionRes = (const char*) httpAPloadJSON["action"];
-        //Serial.println(actionRes);
+        Serial.println(actionRes);
 
 
         if (JSON.typeof(httpAPloadJSON) == "undefined") {
@@ -74,12 +74,12 @@ void loop() {
 
         if (String(actionRes) == "processing" or String(actionRes) == "processed") {
           chunkId = 0;
-        } else if (String(actionRes) == "cutting") {
+        } else if (String(actionRes) == "tracing") {
           HTTPClient httpIns;
 
           // Get the cutting points from the server
-          httpIns.begin("http://192.168.1.107:8080/MCInstructions?id=" + String(chunkId));
-          //Serial.println(chunkId);
+          httpIns.begin("http://192.168.137.1:8080/MCInstructions?id=" + String(chunkId));
+          Serial.println(chunkId);
           int httpInsCode = httpIns.GET();
 
           if (httpInsCode > 0) {

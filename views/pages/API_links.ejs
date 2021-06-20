@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/inputStyles.css">
+        <script src="/js/jquery-3.5.1.js"></script>
+    </head>
+    <body>
+        <header>
+            <img src="/assets/Prospect-logos/regular.jpeg" alt="StyroCut©">
+            <h1 class="headerTitle">Prospect Plotter</h1>
+        </header>
+
+        <div id="API_links_container">
+            <h3>API links</h3>
+
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Link</th>
+                            <th>Optional parameters</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="MCStatus">../MCStatus</a></td>
+                            <td></td>
+                            <td>Provides the the microcontrollers with status information regarding the processing progress of images and instructs them when to perform actions.</td>
+                        </tr>
+                        <tr>
+                            <td><a href="MCInstructions">../MCInstructions</a></td>
+                            <td><i>?id={integer}</i></td>
+                            <td>If an 'id' parameter is provided, that specific chunk of data is returned from the database. Else, all chunks of data are returned. This API informs the microcontrollers of image points to move towards.</td>
+                        </tr>
+                        <tr>
+                            <td><p>*</p><a href="MCInstructionsList">../MCInstructionsList</a></td>
+                            <td></td>
+                            <td>Returns a list of every, previous and current, instruction that is stored within the database. Purely for debugging purposes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <br><br>
+                <p><b>*</b> Developer debug link</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Designed and programmed by Yasir Mustafa</p>
+        </footer>
+    </body>
+    <style>
+        #API_links_container {
+            position: absolute;
+            left: 50px;
+            width: 95%;
+        }
+
+        h3 {
+            font-size: 60px;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        p {
+            font-size: 20px;
+        }
+
+        table p {
+            font-size: 20px;
+            font-weight: bolder;
+            display: inline;
+        }
+
+        table {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 30px;
+            background-color: whitesmoke;
+        }
+        tbody tr:nth-child(odd) {
+            background-color: #dddddd;
+        }
+        td {
+            padding: 10px;
+        }
+        table, td, th {
+            border: 1px solid #dddddd;
+        }
+    </style>
+</html>

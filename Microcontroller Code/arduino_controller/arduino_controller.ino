@@ -16,6 +16,7 @@ int motorXMax = 0;
 int motorYPos = 0;
 int motorYMax = 0;
 #define leadscrewMultiplier 50
+#define maxSteps = 10000
 
 
 // The setup function will run one time when the microcontroller starts
@@ -25,14 +26,15 @@ void setup() {
   motorX.setSpeed(100);
   motorY.setSpeed(100);
 
-  pinMode(8, OUTPUT); // Declare spindle motor relay control pin
-  digitalWrite(8, LOW); // Set the pin to LOW
+  //pinMode(8, OUTPUT); // Declare spindle motor relay control pin
+  //digitalWrite(8, LOW); // Set the pin to LOW
 }
 
 // The loop function will continually run as long as the microcontroller is alive
 void loop() {
   while (Serial.available()) {
     const String serialData = Serial.readString();
+    Serial.println(serialData);
     if (serialData.indexOf("[") > 0 || serialData.indexOf("]") > 0) {
       // !! SIMULATION DATA !! const String serialData = "[[30,59],[30,60],[30,61],[31,28],[31,29],[31,30],[31,31],[32,61],[33,50],[34,50]]";
       const char* serialChar = serialData.c_str();

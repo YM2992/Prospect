@@ -1,7 +1,7 @@
 
 /* Global Variables */
 // Constants
-const HostIP = '192.168.137.1';
+const HostIP = '192.168.137.1'; // Server IP
 const fileConstraints = {
     // Dimension restrictions //
     minHeight: 50,
@@ -16,7 +16,7 @@ const fileConstraints = {
 // Variables
 var contourIds = [];
 
-var submittedFile = null;
+var submittedFile = null; // Stores uploaded file
 var fileDimensions = {
     original: {
         height: 0,
@@ -31,7 +31,7 @@ var fileDimensions = {
 
 
 /* Event logs */
-function newEventLogs(messages) {
+function newEventLogs(messages) { // Creates event logs for the user to see
     for (let i in messages) {
         let newEventMessageBG = document.createElement('p');
         newEventMessageBG.classList.add('eventLogMessageBG');
@@ -62,7 +62,7 @@ const socket = io(`http://${HostIP}:8080`, {
 
 /* Fit previewImg to container and maintain aspect ratio */
 function constrainImg(reqH, reqW) {
-    if (!fileDimensions.original.height || !fileDimensions.original.width) return false;
+    if (!fileDimensions.original.height || !fileDimensions.original.width) return false; // Ensure both height and width of the image are stored in variables
     
     console.log(reqH, reqW);
     
@@ -73,7 +73,7 @@ function constrainImg(reqH, reqW) {
         reqW = parseFloat(reqW);
     }
 
-    const aspectRatio = fileDimensions.original.height / fileDimensions.original.width;
+    const aspectRatio = fileDimensions.original.height / fileDimensions.original.width; // Calculate the aspect ratio for resizing rates
     //console.log('aspectRatio: ', aspectRatio);
 
     if (aspectRatio == 1) {
@@ -210,8 +210,8 @@ $(document).ready(function() {
         }
     }
 
-    // Set spindle positions
-    function translateSpindle(direction) {
+
+    function translateSpindle(direction) { // Translate the spindle up and down
         if (direction > 0) {
             spindleRequests("translateSpindle", 1);
         } else if (direction < 0) {
@@ -219,7 +219,7 @@ $(document).ready(function() {
         }
     }
 
-    function setSpindlePos(pos) {
+    function setSpindlePos(pos) { // Set the upper and lower spindle positions
         if (pos > 0) {
             spindleRequests("setSpindle", 1);
         } else if (pos < 0) {
@@ -276,9 +276,7 @@ $(document).ready(function() {
             contentType: false,
             success: function(data) {
                 console.log(data);
-                if (data == "success") {
-                    //document.getElementById('imgProcessingProgress').style.visibility = "visible";
-                }
+                if (data == "success") {}
             }
         });
     });
@@ -316,9 +314,6 @@ $(document).ready(function() {
         for (var row = 0; row < 100; row++) {
             processDivs[row].style.width = "0%";
         }
-        //document.getElementById('progressBar').style.width = "0%";
-        //document.getElementById('progressBarSpan').innerHTML = "tracing image: 0%";
-        //document.getElementById('imgProcessingProgress').style.visibility = "hidden";
     });
 
     // Keep the 'eventLogsDiv' scrolled to the bottom
@@ -351,7 +346,6 @@ function getOutput() {
         document.getElementById('submitImage').style.visibility = "hidden";
         document.getElementById('fileInput').disabled = false;
         document.getElementById('submitImage').disabled = false;
-        document.getElementById('imgProcessingProgress').style.visibility = "hidden";
         document.getElementById('fileInput').value = null;
         newEventLogs({1: {'message': "ERROR | Incorrect file submission type (must be '.png')", 'colour': '235, 0, 0'}});
         return;
@@ -438,16 +432,12 @@ function addContourOnImage(contourId, x, y) {
     newContourPixel.classList.add('contourEnabled');
     contoursElement.appendChild(newContourPixel);
 
-    // console.log('addContourOnImage - x: ', x);
-    // console.log('addContourOnImage - y: ', y);
-
     //console.log(fileDimensions)
 
-    const xPos = x * (fileDimensions.submitted.height / Math.abs(fileDimensions.submitted.height - fileDimensions.original.height));
-    const yPos = y * (fileDimensions.submitted.width / Math.abs(fileDimensions.submitted.width - fileDimensions.original.width));
-
-    // console.log('addContourOnImage height', xPos)
-    // console.log('addContourOnImage width', yPos)
+    const xPos = 600 - x / (fileDimensions.submitted.height);
+    const yPos = 600 - y / (fileDimensions.submitted.width);
+    
+    console.log(x, fileDimensions.submitted.width, xPos)
 
 
     newContourPixel.style.left = `${x}px`;
@@ -500,7 +490,6 @@ socket.on('failed submission', () => {
     document.getElementById('submitImage').style.visibility = "hidden";
     document.getElementById('fileInput').disabled = false;
     document.getElementById('submitImage').disabled = false;
-    document.getElementById('imgProcessingProgress').style.visibility = "hidden";
     document.getElementById('fileInput').value = null;
 });
 
@@ -509,8 +498,9 @@ socket.on('event', (data) => {
 });
 
 socket.on('processing', (data) => {
+    //console.log(data)
     for (i in data.points) {
-        addContourOnImage(data.contourId, data.points[i].x, data.points[i].y);
+        addContourOnImage(data.contourId, data.points[i].x || data.points[i][1], data.points[i].y || data.points[i][0]);
     }
 })
 socket.on('processed', (data) => {
@@ -529,23 +519,10 @@ socket.on('processing image progress', (data) => {
             alterProcessProgress(data.y);
         }, 40);
     }
-    
-    if (data.x) {
-        setTimeout(function() {
-            const xAsPercentage = parseInt(data.x/fileDimensions.original.height * 100) + 1;
-            // document.getElementById('progressBar').style.width = `${xAsPercentage}%`;
-            // document.getElementById('progressBarSpan').innerHTML = `Processing image`;
-            if (!progressAlreadyGiven.includes(xAsPercentage)) {
-                progressAlreadyGiven.push(xAsPercentage);
-            }
-        }, 100);
-    }
 });
 
 socket.on('tracing progress', (data) => {
     alterProcessProgress(data.y);
-    document.getElementById('progressBar').style.width = `${data.y + 1}%`;
-    document.getElementById('progressBarSpan').innerHTML = `tracing image: ${data.y + 1}%`;
 });
 
 
@@ -573,7 +550,6 @@ socket.on('completion time', (completionDate) => {
         1: {'message': `Beginning tracing .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
     });
 
-    //document.getElementById('imgProcessingProgress').style.visibility = "visible";
     //document.getElementById('timeLeftSpan').style.visibility = "visible";
 
     //document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;

@@ -70,31 +70,35 @@ const io = require('socket.io')(server, {
 
 io.on('connection', (socket) => {
     console.log("socket.io connection established");
-
-    /*socket.on('event', (data) => {
-        console.log(data);
-    });*/ // EXAMPLE
 });
 io.on('disconnect', () => {
     console.log("socket.io disconnected");
 });
 
-server.listen(8080, () => {
+server.listen(8080, () => { // Listen to port 8080
     console.log(`Server started on ${HostIP}:8080`);
-}); // Listen to port 8080
+});
 
 
 const multer = require('multer'); // Require the 'multer' npm library for use in this script
 
 app.get('/', (req, res) => { // Detect when user attempts to call web page with the directory of '/'
-    res.redirect(`http://${HostIP}:8080/home`) // Redirect to the home page on the user's screen
+    res.redirect(`http://${HostIP}:8080/home`); // Redirect to '/home'
 });
 app.get(`/home`, (req, res) => {
-    res.render('pages/home');
+    res.render('pages/home'); // Render '/home'
+});
+
+app.get('/application', (req, res) => {
+    res.render('pages/application'); // Render '/application'
 });
 
 app.get('/help', (req, res) => {
-    res.render('pages/help');
+    res.render('pages/help'); // Render '/help'
+});
+
+app.get('/APIs', (req, res) => {
+    res.render('pages/API_links'); // Render '/APIs'
 });
 
 
@@ -106,10 +110,10 @@ app.get('/MCStatus', (req, res) => {
     });
 });
 
-function updateMCStatus(action, message, spindleRotation) {
+function updateMCStatus(action, message, spindleRotation) { // Update the database with a new message to tell the microcontrollers
     let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'tracing' | 'warning' | 'error' |
     let messageVar = message || "";
-    let spindleRotationVar = false;
+    let spindleRotationVar = spindleRotation == "true" ? true : false;
     if (typeof spindleRotation == "boolean") {
         spindleRotationVar = spindleRotation || false;
     } else if (typeof spindleRotation == "string") {
@@ -128,7 +132,7 @@ function updateMCStatus(action, message, spindleRotation) {
 // Get the current instructions from the database -- Microcontroller reads from this
 app.get('/MCInstructions', (req, res) => {
     const dataPacketId = req.query.id;
-    if (!dataPacketId) {
+    if (!dataPacketId) { // Return all instructions if there is no provided 'dataPacketId' parameter
         db.serialize(() => {
             db.all("SELECT * FROM ProspectData ORDER BY id DESC LIMIT 1", (err, rows) => { // Retrieves the records from the ProspectData table in descending order of value id
                 if (!rows[0]) {return res.send("{}")};
@@ -136,12 +140,12 @@ app.get('/MCInstructions', (req, res) => {
                 res.send(JSON.stringify(rows[0])); // Gets the latest record from the ProspectData table
             });
         });
-    } else {
+    } else { // Return the instructions chunk that has the same 'dataPacketId'
         db.serialize(() => {
             db.all("SELECT * FROM ProspectData ORDER BY id DESC LIMIT 1", (err, rows) => {
                 let response = "";
 
-                if (!rows[0]) {return res.send("{}")};
+                if (!rows[0]) {return res.send("{}")}; // If there is no data then return an empty value to the user screen
 
                 const formattedPoints = JSON.parse(rows[0].formattedPoints);
                 const fPointsLength = formattedPoints.length;
@@ -153,13 +157,13 @@ app.get('/MCInstructions', (req, res) => {
                 response = formattedPoints[dataPacketId];
 
                 //console.log(response);
-                res.send(response);
+                res.send(response); // Send the instructions to the client screen/API link for the microcontrollers to read when ready
             });
         })
     }
 });
 
-// View a list of ALL instructions saved to the database for the microcontroller to read -- Debug purposes
+// View a list of ALL instructions saved to the database for the microcontroller to read -- Debugging purposes
 app.get('/MCInstructionsList', (req, res) => {
     let formattedResponse = ``;
     db.serialize(() => {
@@ -170,7 +174,7 @@ app.get('/MCInstructionsList', (req, res) => {
         });
     });
     function waitForResponse() {
-        if(formattedResponse === ``) {
+        if (formattedResponse === ``) {
             setTimeout(waitForResponse, 50);
             return;
         }
@@ -184,7 +188,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.post('/webMsg', (req, res) => { // Handle the POST request
+app.post('/webMsg', (req, res) => { // Handle the POST request to "/webMsg"
     console.log(`req.body.message: ${req.body.message}`);
     console.log(`req.body.contourIds: ${req.body.contourIds}`);
     switch (req.body.message) {
@@ -215,16 +219,8 @@ app.post('/webMsg', (req, res) => { // Handle the POST request
             io.emit('completion time', (currentDate + shadedPixelCount));
 
             addToDatabase(imagePoints, storedFile);
-            updateMCStatus('tracing', null, true);
+            updateMCStatus('tracing', null);
             break;
-
-        /*case 'toggle wire heat':
-            spindleRotation = !spindleRotation;
-            io.emit('nichrome heat', spindleRotation.toString());
-            db.serialize(() => {
-
-            });
-            break;*/
         
         case 'translateSpindle':
             if (req.body.dir == -1) {
@@ -288,8 +284,6 @@ const orderRecentFiles = (dir) => {
 };
 
 
-// https://www.npmjs.com/package/image-outline
-
 const cv = require('opencv4nodejs'); // Require the 'opencv4nodejs' npm computer vision library for use in this script
 const { debug } = require('console');
 const { traceDeprecation } = require('process');
@@ -297,57 +291,21 @@ const { THRESH_MASK } = require('opencv4nodejs');
 
 
 
-/////////////////////
-
-// let debugArray = [
-//     [[0, 0], [3, 5], [6, 7]],
-//     [[ 27, 31 ], [ 28, 30 ], [ 31, 30 ], [ 32, 31 ], [ 31, 32 ], [ 28, 32 ]],
-//     [[ 58, 30 ], [ 59, 29 ], [ 61, 29 ], [ 62, 30 ], [ 61, 31 ], [ 59, 31 ]],
-//     [[ 49, 33 ], [ 50, 32 ], [ 52, 34 ], [ 51, 35 ], [ 50, 35 ], [ 49, 34 ]],
-//     [ [ 60, 32 ], [ 61, 31 ], [ 62, 32 ], [ 61, 33 ] ],
-//     {
-//         id: 1,
-//         contourPnts: [[0, 4], [9, 19], [8, 87]]
-//     },
-//     {
-//         id: 2,
-//         contourPnts: [[0, 4], [9, 19], [8, 87]]
-//     },
-//     {
-//         id: 3,
-//         contourPnts: [[0, 4], [9, 19], [8, 87]]
-//     },
-//     {
-//         id: 4,
-//         contourPnts: [[0, 4], [9, 19], [8, 87]]
-//     },
-// ]
-
-// var debugArrayFiltered = debugArray.filter(function(element) {
-//     return !Array.isArray(element);
-// });
-
-// console.log(debugArrayFiltered)
-
-/////////////////////
-
-function getAllImagePoints(image) {
-    const grayImage = image.bgrToGray();
+function getAllImagePoints(image) { // Process the image to receive all possible points
+    const grayImage = image.bgrToGray(); // Convert the image to gray
     let threshold = grayImage.threshold(230, 255, cv.THRESH_BINARY);
-    //theshold = cv.imwrite('./ProcessingImages/thresoldSaveTest.png', threshold);
-    console.log(threshold);
+    //cv.imshowWait("test", threshold); 
 
     let imagePoints = [];
     
 
-    for (let y = 0; y < threshold.cols; y++) {
+    for (let y = 0; y < threshold.cols; y++) { // Loop through all y-pixels within the image
         io.emit('processing image progress', {y: y});
-        for (let x = 0; x < threshold.rows; x++) {
-            const [b, g, r] = threshold.atRaw(x, y);
-            if (r <= 50 && g <= 50 && b <= 50) {
-                imagePoints.push([x, y]);
+        for (let x = 0; x < threshold.rows; x++) { // Loop through all x-pixels in each y-pixel within the image (achieves searching through every pixel)
+            const colour = threshold.atRaw(x, y); // Get the colour value on the image at pixel (x, y)
+            if (colour <= 150) { // Check if the pixel is below a certain threshold
+                imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
             }
-
         }
     }
 
@@ -407,13 +365,6 @@ function getImageContours(image) {
         io.emit('processing', {'contourId': v,'points': individualFullContour});
     }
 
-    /*let newContours = threshold2.findContours(cv.RETR_LIST, cv.CHAIN_APPROX_NONE);
-    let newSortedContours = newContours.sort((c0, c1) => c1.area - c0.area)[1];
-    console.log(newContours);
-    let contourPoints = newSortedContours.getPoints();
-    threshold2.drawContours([contourPoints], -1, new cv.Vec3(41, 176, 218), { thickness: 1});
-    cv.imshowWait("Image", threshold2);*/
-
     //console.log(individualContours);
 
     // console.log("======== contourIdsPoints post ==========");
@@ -423,14 +374,14 @@ function getImageContours(image) {
     return individualContours;
 }
 
-function processImage(imageFileDetails, tracingMethod, spindleRotation) {
+function processImage(imageFileDetails, tracingMethod, spindleRotation) { // Process the imagePoints from the image
     // console.log("\n====== function 'processImage' OUTPUT START ======");
     if (!imageFileDetails) {
         io.emit('event', {1: {'message': "ERROR | No file selected for upload. Please refresh the page and try again.", 'colour': '235, 0, 0'}});
         return;
     }
 
-    if (tracingMethod != "traceAll" && tracingMethod != "traceOutlines") {
+    if (tracingMethod != "traceAll" && tracingMethod != "traceOutlines") { // Verify that the 'tracingMethod' is a valid value
         io.emit('event', {1: {'message': `ERROR | Invalid tracing method detected. *${tracingMethod}* does not exist. Please refresh the page and try again.`, 'colour': '235, 0, 0'}});
         return;
     }
@@ -443,14 +394,6 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
     const image = cv.imread("./ProcessingImages/" + getMostRecentFile("./ProcessingImages/").file); // Use the Computer Vision library to read the data of the image
     // console.log('image', image);
 
-    // Ensure the image is the valid size (100 by 100 pixels)
-    /*if (image.rows > 620 || image.cols > 620) {
-        io.emit('failed submission');
-        io.emit('event', {1: {'message': `ERROR | <i>${imageFileDetails.filename}</i> is an invalid size (${image.rows}x${image.cols}). *Should be (100x100).`, 'colour': '235, 0, 0'}});
-        console.warn("PROCESSING CANCELLED, IMPROPER FORMAT, IMAGE IS NOT 100x100 PIXELS");
-        return;
-    }*/
-
     updateMCStatus('processing');
 
     for (let y = 0; y < image.cols; y++) { // Loop through every column of pixels in the image
@@ -460,11 +403,8 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
             io.emit('processing image progress', {x: x});
             totalPixelCount++ // Increment totalPixelCount
 
-
             const [b, g, r] = image.atRaw(x, y) // Get the Red/Green/Blue values on the image at pixel (x, y)
-            //console.log(`RGB: ${r}, ${g}, ${b}`)
-
-            if (r <= 50 && g <= 50 && b <= 50) { // Check if the pixel is shaded, where the microcontrollers will direct the stepper motors to move the nichrome wire to
+            if (r <= 150 && g <= 150 && b <= 150) { // Check if the pixel is shaded, where the microcontrollers will direct the stepper motors to move to
                 //imagePoints.push([x, y]); // Add the shaded pixel to the array of imagePoints
                 shadedPixelCount++ // Increment shadedPixelCount
             }
@@ -478,34 +418,31 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) {
     //console.log(imagePoints);
 
     if (tracingMethod == "traceAll") {
-        imagePoints = getAllImagePoints(image);
-        console.log('traceAll imagePoints')
+        imagePoints = getAllImagePoints(image); // If the 'tracingMethod' is "traceAll" then call the function to get all image points
     } else if (tracingMethod == "traceOutlines") {
-        let imageContours = getImageContours(image);
+        let imageContours = getImageContours(image); // If the 'tracingMethod' is "traceOutlines" then call the function to get image points that are outlines/contours
         let contoursAmount = 0;
         for (i in imageContours) {
             for (v in imageContours[i]) {
                 //console.log(imageContours[i][v]);
                 const fixedXY = [imageContours[i][v].x, imageContours[i][v].y];
-                imagePoints.push(fixedXY);
+                imagePoints.push(fixedXY); // Add the image point to the 'imagePoints' variable
             }
             contoursAmount++;
         }
 
         setTimeout(function() {
             io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
-            io.emit('processed', {'objectNumber': contoursAmount});
-            updateMCStatus('processed', "begin taking data", spindleRotation);
+            io.emit('processed', {'objectNumber': contoursAmount}); // Tell the client that the image has been successfully processed
+            updateMCStatus('processed', "begin taking data", spindleRotation); // Tell the microcontroller to begin taking data
         }, 3000);
     }
     
-    updateMCStatus('tracing', null, spindleRotation);
-
     // console.log("====== function 'processImage' OUTPUT END ======\n");
-    return addToDatabase(imagePoints, imageFileDetails, spindleRotation);
+    return addToDatabase(imagePoints, imageFileDetails, spindleRotation); // Add the record to the database
 }
 
-function arrayToChunks(array, chunkSize) {
+function arrayToChunks(array, chunkSize) { // Convert the given array to chunks so that the microcontroller is not overloaded with data
     let index = 0;
     let chunkedArray = [];
 
@@ -525,6 +462,7 @@ function addToDatabase(imagePoints, imageFileDetails, spindleRotation) {
     if (!imageFileDetails) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'imageFileDetails' RECEIVED ")
     if (!spindleRotation) return console.log("INSTRUCTING MICROCONTROLLERS CANCELLED, NO 'spindleRotation' RECEIVED ")
 
+    // Debug code
     // console.log("imgPnts: ");
     // console.log(imagePoints);
     // console.log("imgDet: ");
@@ -532,7 +470,7 @@ function addToDatabase(imagePoints, imageFileDetails, spindleRotation) {
 
 
     formattedPoints = imagePoints;
-    formattedPoints = arrayToChunks(formattedPoints, 10);
+    formattedPoints = arrayToChunks(formattedPoints, 10); // Cut the 'imagePoints' array into chunks of 10 to prevent overloading the microcontroller
 
     imagePoints = JSON.stringify(imagePoints);
     formattedPoints = JSON.stringify(formattedPoints);

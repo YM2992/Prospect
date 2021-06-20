@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/inputStyles.css">
+        <script src="/js/jquery-3.5.1.js"></script>
+        <script src="/js/socket.io/socket.io.js"></script>
+        <script src="/js/homeProcessing.js"></script>
+    </head>
+    <body onload="progressDivsLoaded()">
+        <header>
+            <img src="/assets/Prospect-logos/regular.jpeg" alt="StyroCut©">
+            <h1 class="headerTitle">Prospect Plotter</h1>
+        </header>
+        <link rel="icon" href="/assets/Prospect-logos/icon.ico">
+        <div id="formDiv">
+            <form id="uploadForm">
+                <label for="fileInput" id="fileInputLbl">Upload a <b>PNG image</b>, select a tracing method and click submit to begin processing.</label><br><br>
+                <input class="formButton" type="file" accept="image/png" name="uploadedImage" id="fileInput" size="n" onchange="getOutput()"/>
+            </form>
+            <div id="workspaceDiv" title="All measurements labelled on the grid are in millimetres (mm).">
+                <img id="previewImg">
+
+                <span id="timeLeftSpan">Time left until completion (hh:mm:ss): 00:00:00</span>
+
+                <div id="progressDivs">
+
+                </div>
+
+                <div id="contoursDiv">
+
+                </div>
+
+            </div>
+            <div id="actionButtonsDiv">
+                <label for="" id="changeSizeLbl">Enter the dimensions of your material (mm) [Min 50, Max 310]:</label>
+                <input class="changeSizeTxt" type="number" id="changeSizeHeight" min="50" max="310" placeholder="height" title="Height of material. (>0 AND <310mm)">
+                <input class="changeSizeTxt" type="number" id="changeSizeWidth" min="50" max="310" placeholder="width" title="Width of material. (>0 AND <310mm)">
+                <br><br>
+                <label class="b-contain">
+                    <span>Trace outline/s (e.g. PCBs)</span>
+                    <input type="radio" name="traceMethod" id="traceOutlines" value="traceOutlines" checked>
+                    <div class="b-input"></div>
+                </label>
+                <label class="b-contain">
+                    <span>Trace all (e.g. drawings)</span>
+                    <input type="radio" name="traceMethod" id="traceAll" value="traceAll">
+                    <div class="b-input"></div>
+                </label>
+
+                <input class="formButton" type="submit" id="submitImage"/>
+                <br>
+                <label class="b-contain">
+                    <span>Enable spindle rotation during tracing (required when drilling/engraving)</span>
+                    <input type="checkbox" name="spindleRotation" id="spindleRotation">
+                    <div class="b-input"></div>
+                </label>
+                <br><br><br>
+                <button class="translateSpindle" id="translateSpindleUp">^</button>
+                <button class="setSpindle" id="setUpPosition">Set upper position</button>
+                <button class="translateSpindle" id="translateSpindleDown">^</button>
+                <button class="setSpindle" id="setDownPosition">Set lower position</button>
+
+                <br><br>
+                
+                <input type="image" src="/assets/Play_Button.png" alt="Begin tracing" title="Begin tracing" id="beginTracing"/>
+            </div>
+            <div id="eventLogsDivTitleBar">
+                <p>Events</p>
+            </div>
+            <div id="eventLogsDiv">
+                
+            </div>
+            <a id="helpBtn" href="help" target="help">HELP</a>
+        </div>
+        <footer>
+            <p>Designed and programmed by Yasir Mustafa</p>
+        </footer>
+    </body>
+</html>

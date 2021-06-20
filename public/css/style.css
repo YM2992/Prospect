@@ -70,6 +70,7 @@ header img {
     top: 0;
     height: 100%;
     width: 100%;
+    overflow: hidden;
 }
 
 .contourPxl {
@@ -303,7 +304,7 @@ header img {
 /* Help button */
 #helpBtn {
     position: fixed;
-    right: 50px;
+    left: 1700px;
     top: 130px;
 
     padding-top: 10px;
@@ -320,6 +321,7 @@ header img {
 
     border-radius: 10px;
     border-style: solid;
+    border-width: 1px;
 }
 
 /* Footer */

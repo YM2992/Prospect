@@ -5,18 +5,37 @@
         <link rel="stylesheet" href="/css/style.css">
         <link rel="stylesheet" href="/css/inputStyles.css">
         <script src="/js/jquery-3.5.1.js"></script>
+        <link rel="icon" href="/public/assets/Prospect-logos/icon.png">
     </head>
     <body>
         <header>
-            <img src="/assets/Prospect-logos/regular.jpeg" alt="StyroCut©">
+            <a href="home" title="home"><img src="/assets/Prospect-logos/regular.jpeg" alt="StyroCut©"></a>
             <h1 class="headerTitle">Prospect Plotter</h1>
         </header>
 
         <h3>Please select a page to be redirected to</h3>
         <div class="grid-container">
-            <div id="grid1">/application</div>
-            <div id="grid2">/help</div>
-            <div id="grid3">/APIs</div>
+            <div id="grid1" class="grid">
+                <div id="grid1Text" class="gridText">
+                    <h4>Application</h4>
+                    <h5>The main page, the client-interface for the Prospect Plotter machine.</h5>
+                    <a href="application">Proceed to page</a>
+                </div>
+            </div>
+            <div id="grid2" class="grid">
+                <div id="grid2Text" class="gridText">
+                    <h4>Help</h4>
+                    <h5>Stuck at any point? Visit the help page to see frequently asked questions and our support contact details.</h5>
+                    <a href="help" style="margin-top: -35px;">Proceed to page</a>
+                </div>
+            </div>
+            <div id="grid3" class="grid">
+                <div id="grid3Text" class="gridText">
+                    <h4>APIs</h4>
+                    <h5>The communication links between the microcontrollers and web server.</h5>
+                    <a href="apis" style="margin-top: 20px;">Proceed to page</a>
+                </div>
+            </div>          
         </div>
 
         <footer>
@@ -29,18 +48,87 @@
             font-family: 'Bebas Neue', sans-serif;
             text-align: center;
         }
+        h4 {
+            font-size: 50px;
+            font-family: 'Bebas Neue', sans-serif;
+            text-align: center;
+            margin-top: -375px;
+            user-select: none;
+            -webkit-text-stroke-width: 1px;
+            -webkit-text-stroke-color: #ffffff;
+        }
+        h5 {
+            font-size: 40px;
+            font-family: 'Bebas Neue', sans-serif;
+            text-align: center;
+            user-select: none;
+            -webkit-text-stroke-width: 1px;
+            -webkit-text-stroke-color: #ffffff;
+        }
         p {
             font-size: 30px;
         }
+        
+        .gridText a {
+            font-size: 30px;
+            font-weight: bolder;
+            font-family: 'Bebas Neue', sans-serif;
+            text-decoration: none;
+            padding-left: 30px;
+            padding-right: 30px;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            background-color: white;
+            border-radius: 3px;
+            color: black;
+            -webkit-text-stroke-width: 1px;
+            -webkit-text-stroke-color: #ffffff;
+            border: 1px solid black;
+            position: absolute;
+            margin-top: 70px;
+            margin-left: -100px;
+        }
 
         .grid-container {
-            position: absolute;
-            left: 50px;
+            margin-left: auto;
+            margin-right: auto;
             width: 90%;
+            height: 490px;
             display: grid;
-            gap: 100px 100px;
+            gap: 0px 10px;
             grid-auto-flow: column;
             text-align: center;
+        }
+        .grid {
+            height: 100%;
+            width: 100%;
+            background-color: white;
+            transition: transform .2s;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position-y: center;
+        }
+        #grid1 {
+            background-image: url("/assets/page-snapshots/application_page.png");
+        }
+        #grid2 {
+            background-image: url("/assets/page-snapshots/help_page.png");
+        }
+        #grid3 {
+            background-image: url("/assets/page-snapshots/apis_page.png");
+        }
+
+        .gridText {
+            height: 100px;
+            width: 500px;
+            margin-top: 390px;
+            margin-left: 30px;
+        }
+
+
+        /* Animations */
+        .grid:hover {
+            transform: scale(1.3);
         }
     </style>
 </html>

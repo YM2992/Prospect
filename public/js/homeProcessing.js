@@ -195,6 +195,11 @@ $(document).ready(function() {
         constrainImg(null, this.value);
     });
 
+    $('#resetChangeSize').click(() => {
+        document.getElementById('changeSizeHeight').value = fileDimensions.original.height;
+        document.getElementById('changeSizeWidth').value = fileDimensions.original.width;
+    });
+
     function spindleRequests(command, dir) {
         if (command == "translateSpindle" || command == "setSpindle") {
             if (dir == -1 || dir == 1) {
@@ -246,12 +251,17 @@ $(document).ready(function() {
 
         document.getElementById('fileInput').disabled = true;
         document.getElementById('submitImage').disabled = true;
+        document.getElementById('submitImage').style.cursor = "auto";
 
         fileDimensions.submitted.height = parseFloat(document.getElementById('changeSizeHeight').value);
         fileDimensions.submitted.width = parseFloat(document.getElementById('changeSizeWidth').value);
 
         document.getElementById('changeSizeHeight').disabled = true;
+        document.getElementById('changeSizeHeight').style.cursor = "auto";
         document.getElementById('changeSizeWidth').disabled = true;
+        document.getElementById('changeSizeWidth').style.cursor = "auto";
+        document.getElementById('resetChangeSize').disabled = true;
+        document.getElementById('resetChangeSize').style.cursor = "auto";
 
         let selectedTraceMethod;
         document.getElementsByName('traceMethod').forEach((radBtn) => {
@@ -265,6 +275,7 @@ $(document).ready(function() {
 
         let formData = new FormData();
         formData.append('file', submittedFile);
+        formData.append('submittedFileDimensions', JSON.stringify(fileDimensions.submitted));
         formData.append('traceMethod', selectedTraceMethod);
         formData.append('spindleRotation', spindleRotation);
 
@@ -434,14 +445,24 @@ function addContourOnImage(contourId, x, y) {
 
     //console.log(fileDimensions)
 
-    const xPos = 600 - x / (fileDimensions.submitted.height);
-    const yPos = 600 - y / (fileDimensions.submitted.width);
-    
-    console.log(x, fileDimensions.submitted.width, xPos)
+    let xPos, yPos;
+    if (fileDimensions.submitted.width > fileDimensions.original.width || fileDimensions.submitted.width < fileDimensions.original.width) {
+        xPos = x * (fileDimensions.submitted.width / fileDimensions.original.width);
+    } else if (fileDimensions.submitted.width == fileDimensions.original.width) {
+        xPos = x;
+    }
+
+    if (fileDimensions.submitted.height > fileDimensions.original.height || fileDimensions.submitted.height < fileDimensions.original.height) {
+        yPos = y * (fileDimensions.submitted.height / fileDimensions.original.height);
+    } else if (fileDimensions.submitted.height == fileDimensions.original.height) {
+        yPos = y;
+    }
+
+    //console.log(x, fileDimensions.submitted.width, xPos)
 
 
-    newContourPixel.style.left = `${x}px`;
-    newContourPixel.style.top = `${y}px`;
+    newContourPixel.style.left = `${xPos}px`;
+    newContourPixel.style.top = `${yPos}px`;
 
     const idInArray = contourIds.indexOf(`${contourId}`);
     if (idInArray <= -1) {
@@ -505,6 +526,9 @@ socket.on('processing', (data) => {
 })
 socket.on('processed', (data) => {
     document.getElementById('beginTracing').style.visibility = "visible";
+    setTimeout(() => {
+        window.alert("Click on the red pixels to select/deselect parts of the image to trace.");
+    }, 5000);
 });
 
 // When the socket connection receives an event, handle the data given (progress of the image processing and tracing)

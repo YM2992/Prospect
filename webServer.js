@@ -1,16 +1,26 @@
 
-// Global variables //
+// Variables //
 var storedFile = null;
 var shadedPixelCount = 0; // Declare the shadedPixelCount integer globally with the ability to be changed
 var contourIdsPoints = [];
 
+var fileDimensions = {
+    submitted: {
+        height: 0,
+        width: 0
+    }
+}
 
-// Global functions //
-function debugLog(message) {
-    //if (!typeof message == 'string') return console.warn('function debugLog: Enter a valid string');
-    message = message.toString();
-    console.log('\x1b[34m', message, '\x1b[0m');
-};
+var stepperMotorMaxVals = {
+    trueVals: {
+        x: 3084,
+        y: 3019
+    },
+    calcVals: {
+        x: 0,
+        y: 0
+    }
+}
 
 
 // Get host IP
@@ -259,10 +269,11 @@ let upload = multer({ dest: 'ProcessingImages/', storage: storage});
 
 
 app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST request
-    //console.log(req.file);
-    //console.log(req.body.traceMethod);
-    
     res.send("success");
+
+    let submittedFD = JSON.parse(req.body.submittedFileDimensions); // Parse the passed JSON string into a JSON object to be accessed later on
+    fileDimensions.submitted = submittedFD;
+
     processImage(req.file, req.body.traceMethod, req.body.spindleRotation); // Call the processImage function to process the image into data suitable for the microcontroller
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,6 +301,15 @@ const { traceDeprecation } = require('process');
 const { THRESH_MASK } = require('opencv4nodejs');
 
 
+function calculateProportionalsForMC(trueX, trueY) {
+    let calcX, calcY = 0;
+    
+    calcX = (trueX / fileDimensions.submitted.width) * ((fileDimensions.submitted.width / 600) * stepperMotorMaxVals.trueVals.x);
+    calcY = (trueY / fileDimensions.submitted.height) * ((fileDimensions.submitted.height / 600) * stepperMotorMaxVals.trueVals.y);
+    
+    stepperMotorMaxVals.calcVals.x = calcX;
+    stepperMotorMaxVals.calcVals.y = calcY;
+}
 
 function getAllImagePoints(image) { // Process the image to receive all possible points
     const grayImage = image.bgrToGray(); // Convert the image to gray

@@ -7,10 +7,11 @@
         <script src="/js/jquery-3.5.1.js"></script>
         <script src="/js/socket.io/socket.io.js"></script>
         <script src="/js/homeProcessing.js"></script>
+        <link rel="icon" href="/public/assets/Prospect-logos/icon.png">
     </head>
     <body onload="progressDivsLoaded()">
         <header>
-            <img src="/assets/Prospect-logos/regular.jpeg" alt="StyroCut©">
+            <a href="home" title="home"><img src="/assets/Prospect-logos/regular.jpeg" alt="StyroCut©"></a>
             <h1 class="headerTitle">Prospect Plotter</h1>
         </header>
         <link rel="icon" href="/assets/Prospect-logos/icon.ico">
@@ -37,6 +38,7 @@
                 <label for="" id="changeSizeLbl">Enter the dimensions of your material (mm) [Min 50, Max 310]:</label>
                 <input class="changeSizeTxt" type="number" id="changeSizeHeight" min="50" max="310" placeholder="height" title="Height of material. (>0 AND <310mm)">
                 <input class="changeSizeTxt" type="number" id="changeSizeWidth" min="50" max="310" placeholder="width" title="Width of material. (>0 AND <310mm)">
+                <button id="resetChangeSize">Reset</button>
                 <br><br>
                 <label class="b-contain">
                     <span>Trace outline/s (e.g. PCBs)</span>
@@ -72,6 +74,7 @@
             <div id="eventLogsDiv">
                 
             </div>
+            <a id="resetBtn" href="">RESET</a>
             <a id="helpBtn" href="help" target="help">HELP</a>
         </div>
         <footer>

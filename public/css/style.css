@@ -208,9 +208,6 @@ header img {
 }
 
 
-#translateSpindleUp {
-
-}
 #translateSpindleDown {
     transform: rotate(180deg);
 }
@@ -312,11 +309,11 @@ header img {
     font-family: none;
 }
 
-/* Reset button */
-#resetBtn {
+/* Top right buttons */
+.toprightBtn {
+    font-family: 'Bebas Neue', sans-serif;
+
     position: fixed;
-    left: 1500px;
-    top: 130px;
 
     padding-top: 10px;
     padding-bottom: 10px;
@@ -330,32 +327,21 @@ header img {
     text-decoration: none;
     text-align: center;
 
-    border-radius: 10px;
+    border-radius: 3px;
     border-style: solid;
     border-width: 1px;
 }
 
+/* Reset button */
+#resetBtn {
+    left: 1625px;
+    top: 130px;
+}
+
 /* Help button */
 #helpBtn {
-    position: fixed;
-    left: 1700px;
+    left: 1775px;
     top: 130px;
-
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 30px;
-    padding-right: 30px;
-
-    font-weight: bolder;
-    font-size: 30px;
-    color: black;
-    background-color: rgb(239, 239, 239);
-    text-decoration: none;
-    text-align: center;
-
-    border-radius: 10px;
-    border-style: solid;
-    border-width: 1px;
 }
 
 /* Footer */

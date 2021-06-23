@@ -56,23 +56,6 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED) {
       HTTPClient httpActions; // Start a HTTPClient to process requests
 
-      // Gets Z-Axis upper and lower bounds
-      httpActions.begin("http://" + SvrIP + "/SpindleSettings"); // Connect to Prospect API '/SpindleSettings'
-      int httpSpinCode = httpActions.GET(); // Send a GET request to the API
-      if (httpSpinCode > 0) {
-        String httpAPload = httpActions.getString(); // Get data from the API
-        JSONVar httpAPloadJSON = JSON.parse(httpAPload); // Parse the data into a JSON object
-
-        if (JSON.typeof(httpAPloadJSON) == "undefined") { // If no data was able to be retrieved, return
-          return;
-        }
-
-        Serial.println(httpAPloadJSON);
-        Myserial.println(httpAPloadJSON); // Send the data to the Arduino via Serial communication
-      }
-
-      delay(2000);
-
       // Get the current action request from the server
       httpActions.begin("http://" + SvrIP + "/MCStatus"); // Connect to the Prospect API '/MCStatus'
       int httpACode = httpActions.GET(); // Send a GET request to the API
@@ -87,6 +70,31 @@ void loop() {
         //Serial.println(httpAPloadJSON);
         const char* actionRes = (const char*) httpAPloadJSON["action"]; // See what the 'action' key of the retrieved data says
         Serial.println(actionRes);
+
+        // Gets Z-Axis upper and lower bounds
+        if (String(actionRes) != "tracing") {
+          httpActions.begin("http://" + SvrIP + "/SpindleSettings"); // Connect to Prospect API '/SpindleSettings'
+          int httpSpinCode = httpActions.GET(); // Send a GET request to the API
+          if (httpSpinCode > 0) {
+            String httpAPload = httpActions.getString(); // Get data from the API
+            JSONVar httpAPloadJSON = JSON.parse(httpAPload); // Parse the data into a JSON object
+    
+            if (JSON.typeof(httpAPloadJSON) == "undefined") { // If no data was able to be retrieved, return
+              return;
+            }
+    
+            const char* upperBound = (const char*) httpAPloadJSON["upperTranslation"]; // See what the 'upperTranslation' key of the retrieved data says
+            const char* lowerBound = (const char*) httpAPloadJSON["lowerTranslation"]; // See what the 'lowerTranslation' key of the retrieved data says
+    
+            Serial.print(upperBound);
+            Serial.print(",");
+            Serial.println(lowerBound);
+            // Send the data to the Arduino via Serial communication
+            Myserial.print(upperBound);
+            Myserial.print(",");
+            Myserial.println(lowerBound);
+          }
+        }
 
         if (String(actionRes) == "processing" or String(actionRes) == "processed") { // If the value of 'action' is "processing" or "processed", reset the 'chunkId' to 0 to signify a new activity
           chunkId = 0;

@@ -60,6 +60,12 @@ const socket = io(`http://${HostIP}:8080`, {
 });
 
 
+/* Popup hint function */
+function popupFunc() {
+    var popup = document.getElementById('redContourHintPopup');
+    popup.classList.toggle("show");
+}
+
 /* Fit previewImg to container and maintain aspect ratio */
 function constrainImg(reqH, reqW) {
     if (!fileDimensions.original.height || !fileDimensions.original.width) return false; // Ensure both height and width of the image are stored in variables
@@ -441,6 +447,14 @@ function addContourOnImage(contourId, x, y) {
     newContourPixel.classList.add('contourPxl');
     newContourPixel.classList.add(`contourId${contourId}`);
     newContourPixel.classList.add('contourEnabled');
+
+    let contourPxlSize = {
+        height: (fileDimensions.submitted.height / fileDimensions.original.height),
+        width: (fileDimensions.submitted.width / fileDimensions.original.width)
+    }
+    newContourPixel.style.height = `${contourPxlSize.height}px`;
+    newContourPixel.style.width = `${contourPxlSize.width}px`;
+
     contoursElement.appendChild(newContourPixel);
 
     //console.log(fileDimensions)
@@ -451,7 +465,6 @@ function addContourOnImage(contourId, x, y) {
     } else if (fileDimensions.submitted.width == fileDimensions.original.width) {
         xPos = x;
     }
-
     if (fileDimensions.submitted.height > fileDimensions.original.height || fileDimensions.submitted.height < fileDimensions.original.height) {
         yPos = y * (fileDimensions.submitted.height / fileDimensions.original.height);
     } else if (fileDimensions.submitted.height == fileDimensions.original.height) {
@@ -501,9 +514,11 @@ function incrementProcessProgress() {
 socket.on('connect', () => {
     console.log("socket.io connection established");
 });
-socket.on('disconnect', () => {
-    console.log("socket.io disconnected");
+socket.on('disconnect', (reason) => {
+    window.alert("Warning! The client-server connection has been interrupted. This may be a result of an overly complex image being processed.\nIf your image has not yet completed processing, please refresh and try again.");
+    console.log("socket.io disconnected:", reason);
 });
+
 
 
 socket.on('failed submission', () => {
@@ -525,10 +540,11 @@ socket.on('processing', (data) => {
     }
 })
 socket.on('processed', (data) => {
+    popupFunc();
     document.getElementById('beginTracing').style.visibility = "visible";
-    setTimeout(() => {
+    /*setTimeout(() => {
         window.alert("Click on the red pixels to select/deselect parts of the image to trace.");
-    }, 5000);
+    }, 5000);*/
 });
 
 // When the socket connection receives an event, handle the data given (progress of the image processing and tracing)
@@ -573,19 +589,5 @@ socket.on('completion time', (completionDate) => {
     newEventLogs({
         1: {'message': `Beginning tracing .. approximately ${formattedHours}:${formattedMins}:${formattedSecs} remaining`}
     });
-
-    //document.getElementById('timeLeftSpan').style.visibility = "visible";
-
-    //document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
-    const timeRemaining = setInterval(function() {
-        let currentDate = new Date().getTime() / 1000;
-        if (currentDate >= completionDate) return clearInterval(timeRemaining);
-
-        let returnedFormattedTime = formattedTimeRemaining(completionDate);
-        let formattedHours = returnedFormattedTime.formattedHours;
-        let formattedMins = returnedFormattedTime.formattedMins;
-        let formattedSecs = returnedFormattedTime.formattedSecs;
-        //document.getElementById('timeLeftSpan').innerHTML = `Time left until completion (hh:mm:ss): ${formattedHours}:${formattedMins}:${formattedSecs}`;
-    }, 1000);
 });
 /* End socket.io handling */

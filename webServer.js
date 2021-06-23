@@ -75,8 +75,11 @@ const io = require('socket.io')(server, {
         methods: ["GET", "POST"],
         allowedHeaders: ["header-auth"],
         credentials: true
-    }
+    },
+    'pingTimeout': 120000,
+    'pingInterval': 2000
 });
+
 
 io.on('connection', (socket) => {
     console.log("socket.io connection established");
@@ -439,6 +442,11 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) { // Pro
 
     if (tracingMethod == "traceAll") {
         imagePoints = getAllImagePoints(image); // If the 'tracingMethod' is "traceAll" then call the function to get all image points
+        
+        setTimeout(function() {
+            io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
+            updateMCStatus('processed', "begin taking data", spindleRotation); // Tell the microcontroller to begin taking data
+        }, 3000);
     } else if (tracingMethod == "traceOutlines") {
         let imageContours = getImageContours(image); // If the 'tracingMethod' is "traceOutlines" then call the function to get image points that are outlines/contours
         let contoursAmount = 0;

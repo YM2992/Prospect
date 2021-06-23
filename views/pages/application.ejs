@@ -23,8 +23,6 @@
             <div id="workspaceDiv" title="All measurements labelled on the grid are in millimetres (mm).">
                 <img id="previewImg">
 
-                <span id="timeLeftSpan">Time left until completion (hh:mm:ss): 00:00:00</span>
-
                 <div id="progressDivs">
 
                 </div>
@@ -76,6 +74,9 @@
             </div>
             <a id="resetBtn" class="toprightBtn" href="">RESET</a>
             <a id="helpBtn" class="toprightBtn" href="help" target="help">HELP</a>
+        </div>
+        <div class="popup">
+            <span class="popuptext" id="redContourHintPopup" onclick="popupFunc()">Hint! You can click the red pixels in order to enable/disable them as they are sent to the machine. This must be done prior to tracing.<br>Click this popup to hide it.</span>        
         </div>
         <footer>
             <p>Designed and programmed by Yasir Mustafa</p>

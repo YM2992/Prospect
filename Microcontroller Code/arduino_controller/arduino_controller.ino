@@ -15,19 +15,17 @@ int motorXPos = 0;
 int motorXMax = 0;
 int motorYPos = 0;
 int motorYMax = 0;
-#define leadscrewMultiplier 50
-#define maxSteps = 10000
 
 
 // The setup function will run one time when the microcontroller starts
 void setup() {
   Serial.begin(9600);
 
-  motorX.setSpeed(100);
+  motorX.setSpeed(100); // The RPM the motors spin at
   motorY.setSpeed(100);
 
-  //pinMode(8, OUTPUT); // Declare spindle motor relay control pin
-  //digitalWrite(8, LOW); // Set the pin to LOW
+  pinMode(8, OUTPUT); // Declare spindle motor relay control pin
+  digitalWrite(8, LOW); // Set the pin to LOW
 }
 
 // The loop function will continually run as long as the microcontroller is alive
@@ -36,10 +34,9 @@ void loop() {
     const String serialData = Serial.readString();
     Serial.println(serialData);
     if (serialData.indexOf("[") > 0 || serialData.indexOf("]") > 0) {
-      // !! SIMULATION DATA !! const String serialData = "[[30,59],[30,60],[30,61],[31,28],[31,29],[31,30],[31,31],[32,61],[33,50],[34,50]]";
-      const char* serialChar = serialData.c_str();
+      const char* serialChar = serialData.c_str(); // Converts from char to String
       StaticJsonDocument<(1024)> doc; // 1024 bytes | memory uses 6 bytes per character. e.g. 100chars = 600bytes
-      deserializeJson(doc, serialChar); // Conver the received data into a JSON format
+      deserializeJson(doc, serialChar); // Convert the received data into a JSON format
   
       Serial.println("received"); // Tell the ESP32 that data has successfully been received
   
@@ -52,8 +49,8 @@ void loop() {
         y -= motorYPos;
 
         // Move the motor to [x,y]
-        motorX.step(x * leadscrewMultiplier);
-        motorY.step(y * leadscrewMultiplier);
+        motorX.step(x);
+        motorY.step(y);
 
         // Set the current position as [x,y]
         motorXPos += x;
@@ -61,24 +58,10 @@ void loop() {
       }
   
       Serial.println("next"); // Request the next chunk of data from the ESP32
-    } else {
-      if (serialData == "locateMax") {
-        // Repetitively increment steps until the max limit has been achieved
-        while (digitalRead(9) == "LOW") {
-          motorX.step(1);
-          motorXMax += 1;
-          delay(50);
-        }
-        while (digitalRead(10) == "LOW") {
-          motorY.step(1);
-          motorYMax += 1;
-          delay(50);
-        }
-
-        // Return to home [0,0]
-        motorX.step(-motorXMax);
-        motorY.step(-motorYMax);
-      }
+    } else if (serialData == "true") {
+      digitalWrite(8, HIGH);
+    } else if (serialData == "false") {
+      digitalWrite(8, LOW);
     }
   }
 }

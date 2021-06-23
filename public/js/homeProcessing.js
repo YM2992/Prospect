@@ -176,9 +176,28 @@ function constrainImg(reqH, reqW) {
 }
 /* End Fit previewImg to container and maintain aspect ratio */
 
+// Perform a HTTP GET request to the given URL and return the response
+function httpGET(url) {    
+    var req = new XMLHttpRequest();
+    req.open('GET', url, false);
+    req.send(null);
+
+    return req.responseText;
+}
 
 /* Handle events after the document is ready and all DOM elements are loaded */
 $(document).ready(function() {
+    // Set the '/MCStatus' status to "idle"
+    $.ajax({
+        url: '../../webMsg',
+        type: 'POST',
+        data: {'message': "updateMCStatus", 'status': "idle"},
+        success: function(data) {
+            console.log(data);
+        }
+    });
+
+    // When the 'changeSizeHeight' number input value has changed, constrain the image
     $('#changeSizeHeight').change(function(e) {
         if (!this.value) return
         if (this.value < fileConstraints.minHeight) {
@@ -190,6 +209,7 @@ $(document).ready(function() {
         constrainImg(this.value, null);
     });
 
+    // When the 'changeSizeWidth' number input value has changed, constrain the image
     $('#changeSizeWidth').change(function(e) {
         if (!this.value) return
         if (this.value < fileConstraints.minWidth) {
@@ -200,19 +220,20 @@ $(document).ready(function() {
 
         constrainImg(null, this.value);
     });
-
+    
+    // Reset the value of the 'changeSize' number inputs
     $('#resetChangeSize').click(() => {
         document.getElementById('changeSizeHeight').value = fileDimensions.original.height;
         document.getElementById('changeSizeWidth').value = fileDimensions.original.width;
     });
 
-    function spindleRequests(command, dir) {
-        if (command == "translateSpindle" || command == "setSpindle") {
-            if (dir == -1 || dir == 1) {
+    function spindleRequests(upperOrLower, val) {
+        if (upperOrLower == "upperTranslation" || upperOrLower == "lowerTranslation") { // Validate that the data is in the correct format
+            if (val != 0) {
                 $.ajax({
                     url: '../../webMsg',
                     type: 'POST',
-                    data: {'message': `${command}`, 'dir': dir},
+                    data: {'message': "setSpindle", 'upperOrLower': `${upperOrLower}`, 'val': val},
                     success: function(data) {
                         console.log(data);
                     }
@@ -221,46 +242,67 @@ $(document).ready(function() {
         }
     }
 
+    /* Load the stored SpindleSettings values into related textboxes*/
+    let currentSpindleReqData = JSON.parse(httpGET('SpindleSettings'));
+    // console.log(currentSpindleReqData)
 
-    function translateSpindle(direction) { // Translate the spindle up and down
-        if (direction > 0) {
-            spindleRequests("translateSpindle", 1);
-        } else if (direction < 0) {
-            spindleRequests("translateSpindle", -1);
-        }
-    }
+    let upperTranslateSpindleTxt = document.getElementById('upperSpindleTranslationTxt');
+    let lowerTranslateSpindleTxt = document.getElementById('lowerSpindleTranslationTxt');
+
+    // Set the values of the upper and lower translate spindle number inputs to the stored values
+    upperTranslateSpindleTxt.value = currentSpindleReqData.upperTranslation;
+    lowerTranslateSpindleTxt.value = currentSpindleReqData.lowerTranslation;
+
+    newEventLogs({1: {'message': "Successfully loaded spindle position settings.", 'colour': '0, 235, 0'}});
 
     function setSpindlePos(pos) { // Set the upper and lower spindle positions
         if (pos > 0) {
-            spindleRequests("setSpindle", 1);
+            if (upperTranslateSpindleTxt.value >= lowerTranslateSpindleTxt.value) {
+                spindleRequests("upperTranslation", upperTranslateSpindleTxt.value);
+                newEventLogs({1: {'message': `Changed 'upperTranslation' to ${upperTranslateSpindleTxt.value}.`, 'colour': '0, 235, 0'}});
+            }
         } else if (pos < 0) {
-            spindleRequests("setSpindle", -1);
+            if (lowerTranslateSpindleTxt.value <= upperTranslateSpindleTxt.value) {
+                spindleRequests("lowerTranslation", lowerTranslateSpindleTxt.value);
+                newEventLogs({1: {'message': `Changed 'lowerTranslation' to ${lowerTranslateSpindleTxt.value}.`, 'colour': '0, 235, 0'}});
+            }
         }
     }
 
-    $('#translateSpindleUp').click(function(){translateSpindle(1)});
-    $('#translateSpindleDown').click(function(){translateSpindle(-1)});
     $('#setUpPosition').click(function(){setSpindlePos(1)});
     $('#setDownPosition').click(function(){setSpindlePos(-1)});
+
+    $('#upperSpindleTranslationTxt').bind('mousedown mouseup change', function() {
+        if (upperTranslateSpindleTxt.value < lowerTranslateSpindleTxt.value) {
+            upperTranslateSpindleTxt.value = lowerTranslateSpindleTxt.value;
+        }
+    });
+    $('#lowerSpindleTranslationTxt').bind('mousedown mouseup change', function() {
+        if (lowerTranslateSpindleTxt.value > upperTranslateSpindleTxt.value) {
+            lowerTranslateSpindleTxt.value = upperTranslateSpindleTxt.value;
+        }
+    });
     
 
     // When the document is ready, remove the default redirection of the form submit
     $('#submitImage').click(function(e) {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default actions of the submit button
 
-        submittedFile = document.getElementById('fileInput').files[0];
-        if (!submittedFile) {
+        submittedFile = document.getElementById('fileInput').files[0]; // If multiple files have been uploaded, process only the first
+        if (!submittedFile) { // If there is no file uploaded send an error message to the user
             newEventLogs({1: {'message': "ERROR | No file selected for upload", 'colour': '235, 0, 0'}});
             document.getElementById('submitImage').style.visibility = "hidden";
             return;
         }
 
+        // Store the submitted image height and width to a variable for future calculations
+        fileDimensions.submitted.height = parseFloat(document.getElementById('changeSizeHeight').value);
+        fileDimensions.submitted.width = parseFloat(document.getElementById('changeSizeWidth').value);
+
+        // Disable buttons, textboxes and radio buttons within the web page to prevent invalid inputs
         document.getElementById('fileInput').disabled = true;
         document.getElementById('submitImage').disabled = true;
         document.getElementById('submitImage').style.cursor = "auto";
-
-        fileDimensions.submitted.height = parseFloat(document.getElementById('changeSizeHeight').value);
-        fileDimensions.submitted.width = parseFloat(document.getElementById('changeSizeWidth').value);
 
         document.getElementById('changeSizeHeight').disabled = true;
         document.getElementById('changeSizeHeight').style.cursor = "auto";
@@ -269,16 +311,18 @@ $(document).ready(function() {
         document.getElementById('resetChangeSize').disabled = true;
         document.getElementById('resetChangeSize').style.cursor = "auto";
 
+        // Get the selected trace method
         let selectedTraceMethod;
-        document.getElementsByName('traceMethod').forEach((radBtn) => {
+        document.getElementsByName('traceMethod').forEach((radBtn) => { // Loop through the 'traceMethod' radio buttons
             if (radBtn.checked) {
                 selectedTraceMethod = radBtn.value;
             }
             radBtn.disabled = true;
         });
 
-        let spindleRotation = document.getElementById('spindleRotation').checked;
+        let spindleRotation = document.getElementById('spindleRotation').checked; // Get the value of 'spindleRotation'
 
+        // Create a new form to add data to for POSTing to the server
         let formData = new FormData();
         formData.append('file', submittedFile);
         formData.append('submittedFileDimensions', JSON.stringify(fileDimensions.submitted));
@@ -300,8 +344,10 @@ $(document).ready(function() {
 
     // Begin tracing process
     $('#beginTracing').click(function() {
-        document.getElementById('beginTracing').style.visibility = "hidden";
-        
+        document.getElementById('beginTracing').style.visibility = "hidden"; // Hide the begin tracing button
+        document.getElementById('beginTracing').disabled = true; // Disable the begin tracing button
+
+        // Disable the remaining spindle rotation and translate/set spindle inputs
         document.getElementById('spindleRotation').disabled = true;
         Array.prototype.forEach.call(document.getElementsByClassName('translateSpindle'), function(element) {
             element.disabled = true;
@@ -310,14 +356,13 @@ $(document).ready(function() {
             element.disabled = true;
         });
 
-        $('#beginTracing').attr('disabled', true);
-
         if (contourIds.length > 0) {
             contourIds = `${contourIds}`
         } else {
             contourIds = null;
         }
 
+        // Send a request to the server with the selected contours/outlines/highlighted parts of the image to begin tracing
         $.ajax({
             url: '../../webMsg',
             type: 'POST',
@@ -327,6 +372,7 @@ $(document).ready(function() {
             }
         });
 
+        // Reset all the green progress bars to 0 width
         let processDivs = document.getElementsByClassName('processDiv');
         for (var row = 0; row < 100; row++) {
             processDivs[row].style.width = "0%";
@@ -374,11 +420,6 @@ function getOutput() {
         var img = new Image();
         img.src = m.target.result;
         img.onload = function() {
-            /*if (this.height > 620 || this.width > 620) {
-                newEventLogs({1: {'message': "ERROR | File too large (must be 620x620 pixels).", 'colour': '235, 0, 0'}});
-                return;
-            }*/
-
             fileDimensions.original.height = this.height / 2;
             fileDimensions.original.width = this.width / 2;
         }
@@ -516,6 +557,7 @@ socket.on('connect', () => {
 });
 socket.on('disconnect', (reason) => {
     window.alert("Warning! The client-server connection has been interrupted. This may be a result of an overly complex image being processed.\nIf your image has not yet completed processing, please refresh and try again.");
+    newEventLogs({1: {'message': "ERROR | The client-server connection has been interrupted. This may be a result of an overly complex image being processed.\nIf your image has not yet completed processing, please refresh and try again.", 'colour': '235, 0, 0'}});
     console.log("socket.io disconnected:", reason);
 });
 

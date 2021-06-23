@@ -18,13 +18,13 @@ HardwareSerial Myserial(2);
 #define TXD2 17
 
 
-// Declare credentials of target WAP to leech from
+// Declare credentials of the server
 const char* WAPssid = "Prospect Server";
 const char* WAPpassword = "635s7F*8";
 
-// Declare credentials of LAN
-const char* LANssid = "StyrocutLAN";
-const char* LANpassword = "styr0cut1";
+// Declare ServerIP
+String SvrIP = "192.168.137.1:8080";
+
 
 // Initialise WiFi server on port 80
 WiFiServer server(80);
@@ -40,7 +40,7 @@ void setup() {
   Serial.begin(115200);
   Myserial.begin(9600, SERIAL_8N1, RXD2, TXD2); // Begin serial connection with the Arduino
   delay(4000);
-  WiFi.begin(WAPssid, WAPpassword);
+  WiFi.begin(WAPssid, WAPpassword); // Connect to the server
 
   while (WiFi.status() != WL_CONNECTED) { // Wait until the ESP32 has connected to the server
     delay(1000);
@@ -54,60 +54,83 @@ void setup() {
 void loop() {
   if (chunkSend) {
     if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient httpActions;
+      HTTPClient httpActions; // Start a HTTPClient to process requests
 
-      // Get the current action request from the server
-      httpActions.begin("http://192.168.137.1:8080/MCStatus");
-      int httpACode = httpActions.GET();
-      if (httpACode > 0) {
-        String httpAPload = httpActions.getString();
-        JSONVar httpAPloadJSON = JSON.parse(httpAPload);
+      // Gets Z-Axis upper and lower bounds
+      httpActions.begin("http://" + SvrIP + "/SpindleSettings"); // Connect to Prospect API '/SpindleSettings'
+      int httpSpinCode = httpActions.GET(); // Send a GET request to the API
+      if (httpSpinCode > 0) {
+        String httpAPload = httpActions.getString(); // Get data from the API
+        JSONVar httpAPloadJSON = JSON.parse(httpAPload); // Parse the data into a JSON object
 
-        //Serial.println(httpAPloadJSON);
-        const char* actionRes = (const char*) httpAPloadJSON["action"];
-        Serial.println(actionRes);
-
-
-        if (JSON.typeof(httpAPloadJSON) == "undefined") {
+        if (JSON.typeof(httpAPloadJSON) == "undefined") { // If no data was able to be retrieved, return
           return;
         }
 
-        if (String(actionRes) == "processing" or String(actionRes) == "processed") {
+        Serial.println(httpAPloadJSON);
+        Myserial.println(httpAPloadJSON); // Send the data to the Arduino via Serial communication
+      }
+
+      delay(2000);
+
+      // Get the current action request from the server
+      httpActions.begin("http://" + SvrIP + "/MCStatus"); // Connect to the Prospect API '/MCStatus'
+      int httpACode = httpActions.GET(); // Send a GET request to the API
+      if (httpACode > 0) {
+        String httpAPload = httpActions.getString(); // Get data from the API
+        JSONVar httpAPloadJSON = JSON.parse(httpAPload); // Parse the data into a JSON object
+
+        if (JSON.typeof(httpAPloadJSON) == "undefined") { // If no data was able to be retrieved, return
+          return;
+        }
+
+        //Serial.println(httpAPloadJSON);
+        const char* actionRes = (const char*) httpAPloadJSON["action"]; // See what the 'action' key of the retrieved data says
+        Serial.println(actionRes);
+
+        if (String(actionRes) == "processing" or String(actionRes) == "processed") { // If the value of 'action' is "processing" or "processed", reset the 'chunkId' to 0 to signify a new activity
           chunkId = 0;
-        } else if (String(actionRes) == "tracing") {
+
+          Myserial.println(false); // Disable spindle rotation
+        } else if (String(actionRes) == "tracing") { // If the value of 'action' is "tracing", begin retrieving and sending data from the server to the Arduino
           HTTPClient httpIns;
 
           // Get the cutting points from the server
-          httpIns.begin("http://192.168.137.1:8080/MCInstructions?id=" + String(chunkId));
+          httpIns.begin("http://" + SvrIP + "/MCInstructions?id=" + String(chunkId));
           Serial.println(chunkId);
-          int httpInsCode = httpIns.GET();
+          int httpInsCode = httpIns.GET(); // Send a GET request to the API
 
           if (httpInsCode > 0) {
-            String httpInsPload = httpIns.getString();
-            JSONVar httpInsPloadJSON = JSON.parse(httpInsPload);
+            String httpInsPload = httpIns.getString(); // Get data from the API
+            JSONVar httpInsPloadJSON = JSON.parse(httpInsPload); // Parse the data into a JSON object
 
-            if (JSON.typeof(httpInsPloadJSON) == "undefined") {
+            if (JSON.typeof(httpInsPloadJSON) == "undefined") { // If no data was able to be retrieved, return
               return;
             }
 
             Serial.println(httpInsPloadJSON);
-            Myserial.println(httpInsPloadJSON);
+            Myserial.println(httpInsPloadJSON); // Send location instruction data to Arduino via serial
+
+            Serial.println((const char*) httpAPloadJSON["spindleRotation"]);
+            Myserial.println((const char*) httpAPloadJSON["spindleRotation"]); // Send spindle rotation bool to Arduino via serial
+          } else {
+            Myserial.println(false); // Disable spindle rotation
           }
-          httpIns.end();
+          httpIns.end(); // End the HTTP request
         }
       }
-      httpActions.end();
+      httpActions.end(); // End the HTTP request
     }
   }
 
-  while (Myserial.available()) {
-    String serialS = Myserial.readString();
-    serialS.trim();
-    if (serialS == "received") {
-        chunkSend = false;
-    } else if (serialS == "next") {
+  while (Myserial.available()) { // While the Arduino has something to say, read it
+    String serialS = Myserial.readString(); // Read what the Arduino is saying
+    serialS.trim(); // Remove any whitespaces from the Arduino's message
+    if (serialS == "received") { // Arduino has said that it has received the data chunk
+        chunkSend = false; // Pause chunk sending
+    } else if (serialS == "next") { // Arduino is requesting the next data chunk
         chunkId++;
-        chunkSend = true;
+        chunkSend = true; // Resume chunk sending
     }
   }
   delay(1000);

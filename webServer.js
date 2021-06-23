@@ -52,8 +52,10 @@ db.serialize(() => {
     //db.exec("DROP TABLE ProspectData");
     //db.exec("DROP TABLE Instructions");
 
+    // Create tables within the database
     db.exec("CREATE TABLE IF NOT EXISTS ProspectData (id INTEGER PRIMARY KEY AUTOINCREMENT, tracing BOOLEAN, fileName TEXT, fileSize FLOAT, progress INTEGER, points LONGTEXT, formattedPoints LONGTEXT, spindleRotation BOOLEAN)");
-    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, spindleRotation BOOLEAN)")
+    db.exec("CREATE TABLE IF NOT EXISTS Instructions (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, message LONGTEXT, spindleRotation BOOLEAN)");
+    db.exec("CREATE TABLE IF NOT EXISTS SpindleSettings (id INTEGER PRIMARY KEY AUTOINCREMENT, lowerTranslation INTEGER, upperTranslation INTEGER)");
     //db.run(`INSERT INTO Instructions (id, action, message) VALUES (NULL, '', '')`);
 
     console.log("Database initialised.");
@@ -76,7 +78,7 @@ const io = require('socket.io')(server, {
         allowedHeaders: ["header-auth"],
         credentials: true
     },
-    'pingTimeout': 120000,
+    'pingTimeout': 120000, // 'pingTimeout' and 'pingInterval' are raised to prevent socket disconnection when processing large/complex images
     'pingInterval': 2000
 });
 
@@ -114,7 +116,6 @@ app.get('/APIs', (req, res) => {
     res.render('pages/API_links'); // Render '/APIs'
 });
 
-
 app.get('/MCStatus', (req, res) => {
     db.serialize(() => {
         db.all("SELECT * FROM Instructions", (err, rows) => { // Retrieves the records from the Instructions table
@@ -123,7 +124,17 @@ app.get('/MCStatus', (req, res) => {
     });
 });
 
-function updateMCStatus(action, message, spindleRotation) { // Update the database with a new message to tell the microcontrollers
+app.get('/SpindleSettings', (req, res) => {
+    db.serialize(() => {
+        db.all("SELECT * FROM SpindleSettings", (err, rows) => { // Retrieves the records from the SpindleSettings table
+            res.send(JSON.stringify(rows[0]));
+        });
+    });
+});
+
+
+// Update the database with a new message to tell the microcontrollers
+function updateMCStatus(action, message, spindleRotation) {
     let actionVar = action || ""; // | 'idle' | 'processing' | 'processed' | 'tracing' | 'warning' | 'error' |
     let messageVar = message || "";
     let spindleRotationVar = spindleRotation == "true" ? true : false;
@@ -141,6 +152,16 @@ function updateMCStatus(action, message, spindleRotation) { // Update the databa
 }
 //db.run(`INSERT INTO Instructions (id, action, message, spindleRotation) VALUES (NULL, 'idle', '', false)`)
 //updateMCStatus("idle", "Test", false);
+
+// Update '/SpindleSettings' API data
+function updateSpindleSettings(upperOrLower, val) {
+    console.log(upperOrLower, val)
+    db.serialize(() => {
+        db.run(`UPDATE SpindleSettings SET ${upperOrLower}='${val}' WHERE id='1'`)
+    });
+}
+//db.run(`INSERT INTO SpindleSettings (id, lowerTranslation, upperTranslation) VALUES (NULL, 0, 0)`)
+
 
 // Get the current instructions from the database -- Microcontroller reads from this
 app.get('/MCInstructions', (req, res) => {
@@ -186,6 +207,8 @@ app.get('/MCInstructionsList', (req, res) => {
             });
         });
     });
+
+    // Repeatedly wait until all data has been retrieved from the database, then respond with it
     function waitForResponse() {
         if (formattedResponse === ``) {
             setTimeout(waitForResponse, 50);
@@ -201,10 +224,33 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+// Convert values into calculated values to reduce computing stress on the microcontrollers
+function calculateProportionalsForMC(trueX, trueY) {
+    let calcX, calcY = 0;
+    
+    calcX = (trueX / fileDimensions.submitted.width) * ((fileDimensions.submitted.width / 600) * stepperMotorMaxVals.trueVals.x);
+    calcY = (trueY / fileDimensions.submitted.height) * ((fileDimensions.submitted.height / 600) * stepperMotorMaxVals.trueVals.y);
+    
+    stepperMotorMaxVals.calcVals.x = calcX;
+    stepperMotorMaxVals.calcVals.y = calcY;
+
+    return [calcX, calcY];
+}
+
 app.post('/webMsg', (req, res) => { // Handle the POST request to "/webMsg"
-    console.log(`req.body.message: ${req.body.message}`);
-    console.log(`req.body.contourIds: ${req.body.contourIds}`);
+    // console.log(`req.body.message: ${req.body.message}`);
+    // console.log(`req.body.contourIds: ${req.body.contourIds}`);
     switch (req.body.message) {
+        case 'updateMCStatus': 
+            if (req.body.status) {
+                switch (req.body.status) {
+                    case 'idle':
+                        updateMCStatus('idle');
+                        break;
+                }
+            }
+            break;
+
         case 'begin tracing':
             if (req.body.contourIds.length <= 0) {
                 return io.emit('event', {1: {'message': `ERROR | 1 or more contours/image outlines must be selected`, 'colour': '235, 0, 0'}});
@@ -229,42 +275,45 @@ app.post('/webMsg', (req, res) => { // Handle the POST request to "/webMsg"
 
             res.send("success - webMsg");
             const currentDate = new Date().getTime() / 1000;
+            // Send the estimated completion time of tracing to the client
             io.emit('completion time', (currentDate + shadedPixelCount));
 
-            addToDatabase(imagePoints, storedFile);
-            updateMCStatus('tracing', null);
+            // Loop through all image points and convert them into calculated values to reduce computing stress on the microcontrollers
+            for (let i = 0; i < imagePoints.length; i++) {
+                let calc = calculateProportionalsForMC(imagePoints[i][0], imagePoints[i][1]);
+                imagePoints[i][0] = calc[0];
+                imagePoints[i][1] = calc[1];
+                //console.log(imagePoints[i])
+            }
+
+            addToDatabase(imagePoints, storedFile); // Store the image points and file in the database
+            updateMCStatus('tracing', null); // Tell the microcontrollers to start tracing
             break;
         
-        case 'translateSpindle':
-            if (req.body.dir == -1) {
-                
-            } else if (req.body.dir == 1) {
-
-            }
-            break;
         
         case 'setSpindle':
-
+            updateSpindleSettings(req.body.upperOrLower, req.body.val);
             break;
     }
 });
 
 
-// Generate a randomised string of 15 characters for the uploaded image filename
+// Generate a randomised string of 7 characters for the uploaded image filename
 function generateFileName() {
     let result = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let charactersLength = characters.length;
-    for ( let i = 0; i < 15; i++ ) {
+    for ( let i = 0; i < 7; i++ ) {
         result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
 }
 
+// Establish multer options
 let storage = multer.diskStorage({
-    destination: 'ProcessingImages/',
+    destination: 'ProcessingImages/', // Set the folder to save processed images to
     filename: function(req, file, cb) {
-        cb(null, file.originalname);
+        cb(null, Date.now() + "_" + generateFileName() + "_" + file.originalname); // Set the saved image name format
     }
 });
 
@@ -285,6 +334,7 @@ app.post('/upload', upload.single('file'), (req, res) => { // Handle the POST re
 // Image processing //
 const path = require('path');
 
+// Get the most recent file that has been saved
 const getMostRecentFile = (dir) => {
   const files = orderRecentFiles(dir);
   return files.length ? files[0] : undefined;
@@ -303,16 +353,6 @@ const { debug } = require('console');
 const { traceDeprecation } = require('process');
 const { THRESH_MASK } = require('opencv4nodejs');
 
-
-function calculateProportionalsForMC(trueX, trueY) {
-    let calcX, calcY = 0;
-    
-    calcX = (trueX / fileDimensions.submitted.width) * ((fileDimensions.submitted.width / 600) * stepperMotorMaxVals.trueVals.x);
-    calcY = (trueY / fileDimensions.submitted.height) * ((fileDimensions.submitted.height / 600) * stepperMotorMaxVals.trueVals.y);
-    
-    stepperMotorMaxVals.calcVals.x = calcX;
-    stepperMotorMaxVals.calcVals.y = calcY;
-}
 
 function getAllImagePoints(image) { // Process the image to receive all possible points
     const grayImage = image.bgrToGray(); // Convert the image to gray

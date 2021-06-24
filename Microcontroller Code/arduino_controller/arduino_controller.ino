@@ -10,7 +10,7 @@ Stepper motorX(steps, 2, 3);
 Stepper motorY(steps, 4, 5);
 #define motorInterfaceType 1
 
-Stepper motorZ = Stepper(2083, 8, 10, 9, 11);
+//Stepper motorZ = Stepper(2083, 8, 10, 9, 11);
 
 // Runtime variables
 int motorXPos = 0;
@@ -28,7 +28,7 @@ void setup() {
 
   motorX.setSpeed(100); // The RPM the motors spin at
   motorY.setSpeed(100);
-  motorZ.setSpeed(100);
+  //motorZ.setSpeed(100);
 
   pinMode(7, OUTPUT); // Declare spindle motor relay control pin
   digitalWrite(7, LOW); // Set the pin to LOW
@@ -57,8 +57,8 @@ void loop() {
         // Move the motor to [x,y] and lower + raise the spindle
         motorX.step(x);
         motorY.step(y);
-        motorZ.step(motorZLower);
-        motorZ.step(motorZUpper);
+        //motorZ.step(motorZLower);
+        //motorZ.step(motorZUpper);
 
         // Set the current position as [x,y]
         motorXPos += x;
@@ -70,12 +70,12 @@ void loop() {
       digitalWrite(7, HIGH);
     } else if (serialData == "false") {
       digitalWrite(7, LOW);
-    } else if (isDigit(serialData.charAt(0)) && serialData.indexOf(",") > 0) {
+    /*} else if (isDigit(serialData.charAt(0)) && serialData.indexOf(",") > 0) {
       motorZUpper = serialData.substring(0, serialData.indexOf(",") - 1).toInt(); // Get the value before the comma separator (lower bound)
       motorZLower = serialData.substring(serialData.indexOf(",") + 1).toInt(); // Get the value after the comma seperator (upper bound)
 
       motorZ.step(motorZUpper);
-      motorZ.step(motorZLower);
+      motorZ.step(motorZLower);*/
     }
   }
 }

@@ -72,29 +72,33 @@ void loop() {
         Serial.println(actionRes);
 
         // Gets Z-Axis upper and lower bounds
-        if (String(actionRes) != "tracing") {
-          httpActions.begin("http://" + SvrIP + "/SpindleSettings"); // Connect to Prospect API '/SpindleSettings'
-          int httpSpinCode = httpActions.GET(); // Send a GET request to the API
+        /*if (String(actionRes) != "tracing") {
+          HTTPClient httpSpindle;
+          httpSpindle.begin("http://" + SvrIP + "/SpindleSettings"); // Connect to Prospect API '/SpindleSettings'
+          int httpSpinCode = httpSpindle.GET(); // Send a GET request to the API
           if (httpSpinCode > 0) {
-            String httpAPload = httpActions.getString(); // Get data from the API
-            JSONVar httpAPloadJSON = JSON.parse(httpAPload); // Parse the data into a JSON object
+            String httpSpindleLoad = httpSpindle.getString(); // Get data from the API
+            JSONVar httpSpindleLoadJSON = JSON.parse(httpSpindleLoad); // Parse the data into a JSON object
+
+            Serial.println(httpSpindleLoad);
+            Serial.println(httpSpindleLoadJSON);
     
-            if (JSON.typeof(httpAPloadJSON) == "undefined") { // If no data was able to be retrieved, return
+            if (JSON.typeof(httpSpindleLoadJSON) == "undefined") { // If no data was able to be retrieved, return
               return;
             }
     
-            const char* upperBound = (const char*) httpAPloadJSON["upperTranslation"]; // See what the 'upperTranslation' key of the retrieved data says
-            const char* lowerBound = (const char*) httpAPloadJSON["lowerTranslation"]; // See what the 'lowerTranslation' key of the retrieved data says
+            //const char* upperBound = (const char*) httpSpindleLoadJSON["upperTranslation"]; // See what the 'upperTranslation' key of the retrieved data says
+            //const char* lowerBound = (const char*) httpSpindleLoadJSON["lowerTranslation"]; // See what the 'lowerTranslation' key of the retrieved data says
     
-            Serial.print(upperBound);
+            Serial.print((const char*) httpSpindleLoadJSON["upperTranslation"]);
             Serial.print(",");
-            Serial.println(lowerBound);
+            Serial.println((const char*) httpSpindleLoadJSON["lowerTranslation"]);
             // Send the data to the Arduino via Serial communication
-            Myserial.print(upperBound);
+            Myserial.print((const char*) httpSpindleLoadJSON["upperTranslation"]);
             Myserial.print(",");
-            Myserial.println(lowerBound);
+            Myserial.println((const char*) httpSpindleLoadJSON["lowerTranslation"]);
           }
-        }
+        }*/
 
         if (String(actionRes) == "processing" or String(actionRes) == "processed") { // If the value of 'action' is "processing" or "processed", reset the 'chunkId' to 0 to signify a new activity
           chunkId = 0;

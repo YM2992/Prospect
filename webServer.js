@@ -12,7 +12,7 @@ var fileDimensions = {
 }
 
 var stepperMotorMaxVals = {
-    trueVals: {
+    trueVals: { // Max steps motors have
         x: 3084,
         y: 3019
     },

@@ -287,7 +287,7 @@ app.post('/webMsg', (req, res) => { // Handle the POST request to "/webMsg"
             }
 
             addToDatabase(imagePoints, storedFile); // Store the image points and file in the database
-            updateMCStatus('tracing', null, true); // Tell the microcontrollers to start tracing
+            updateMCStatus('tracing', null); // Tell the microcontrollers to start tracing
             break;
         
         

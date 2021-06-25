@@ -287,7 +287,7 @@ app.post('/webMsg', (req, res) => { // Handle the POST request to "/webMsg"
             }
 
             addToDatabase(imagePoints, storedFile); // Store the image points and file in the database
-            updateMCStatus('tracing', null); // Tell the microcontrollers to start tracing
+            updateMCStatus('tracing', null, true); // Tell the microcontrollers to start tracing
             break;
         
         
@@ -483,10 +483,9 @@ function processImage(imageFileDetails, tracingMethod, spindleRotation) { // Pro
     if (tracingMethod == "traceAll") {
         imagePoints = getAllImagePoints(image); // If the 'tracingMethod' is "traceAll" then call the function to get all image points
         
-        setTimeout(function() {
-            io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
+        io.emit('event', {1: {'message': "Image successfully processed", 'colour': "0, 235, 0"}});
+            io.emit('processed', {'objectNumber': 1}); // Tell the client that the image has been successfully processed
             updateMCStatus('processed', "begin taking data", spindleRotation); // Tell the microcontroller to begin taking data
-        }, 3000);
     } else if (tracingMethod == "traceOutlines") {
         let imageContours = getImageContours(image); // If the 'tracingMethod' is "traceOutlines" then call the function to get image points that are outlines/contours
         let contoursAmount = 0;
@@ -538,7 +537,7 @@ function addToDatabase(imagePoints, imageFileDetails, spindleRotation) {
 
 
     formattedPoints = imagePoints;
-    formattedPoints = arrayToChunks(formattedPoints, 10); // Cut the 'imagePoints' array into chunks of 10 to prevent overloading the microcontroller
+    formattedPoints = arrayToChunks(formattedPoints, 5); // Cut the 'imagePoints' array into chunks of 10 to prevent overloading the microcontroller
 
     imagePoints = JSON.stringify(imagePoints);
     formattedPoints = JSON.stringify(formattedPoints);

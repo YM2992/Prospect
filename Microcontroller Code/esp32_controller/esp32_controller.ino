@@ -137,6 +137,7 @@ void loop() {
 
   while (Myserial.available()) { // While the Arduino has something to say, read it
     String serialS = Myserial.readString(); // Read what the Arduino is saying
+    Serial.println(serialS);
     serialS.trim(); // Remove any whitespaces from the Arduino's message
     if (serialS == "received") { // Arduino has said that it has received the data chunk
         chunkSend = false; // Pause chunk sending
